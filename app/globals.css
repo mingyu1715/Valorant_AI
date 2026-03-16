@@ -18,6 +18,18 @@
   --riot-error: #ff9b88;
   --riot-error-soft: rgba(255, 112, 86, 0.16);
   --shadow-panel: 0 30px 80px rgba(0, 0, 0, 0.36);
+  --font-body:
+    "Pretendard",
+    "Noto Sans KR",
+    "Noto Sans",
+    system-ui,
+    sans-serif;
+  --font-display:
+    "Pretendard",
+    "Noto Sans KR",
+    "Noto Sans",
+    system-ui,
+    sans-serif;
 }
 
 * {
@@ -36,6 +48,9 @@ body {
     linear-gradient(155deg, #06080d 0%, #0a0d14 44%, #05070b 100%);
   color: var(--text-main);
   font-family: var(--font-body), sans-serif;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 
 body::before {
@@ -72,6 +87,19 @@ select {
 @layer utilities {
   .font-display {
     font-family: var(--font-display), sans-serif;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .text-pretty {
+    text-wrap: pretty;
+  }
+
+  .break-anywhere {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 
   .panel-shell {

@@ -113,9 +113,13 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
     return (
       <main className="mx-auto min-h-screen w-full max-w-[1000px] px-4 py-8 sm:px-6 lg:px-10">
         <section className="panel-shell rounded-[32px] p-6 lg:p-7">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.34em] text-cyan-300/90">Admin Logs</p>
-          <h1 className="font-display text-6xl leading-[0.88] text-stone-50 sm:text-7xl">LOCKED</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90 sm:text-sm sm:tracking-[0.32em]">
+            관리자 로그
+          </p>
+          <h1 className="font-display text-[clamp(2.6rem,5vw,4.8rem)] leading-[0.92] text-stone-50 text-balance break-words">
+            잠김
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 text-pretty break-words">
             `ADMIN_ACCESS_TOKEN` 환경 변수를 설정해야 운영 로그 콘솔이 활성화됩니다.
           </p>
           <div className="mt-6">
@@ -123,7 +127,7 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
               href="/dashboard"
               className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
             >
-              Dashboard
+              대시보드
             </Link>
           </div>
         </section>
@@ -135,15 +139,19 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
     return (
       <main className="mx-auto min-h-screen w-full max-w-[1000px] px-4 py-8 sm:px-6 lg:px-10">
         <section className="panel-shell rounded-[32px] p-6 lg:p-7">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.34em] text-cyan-300/90">Admin Logs</p>
-          <h1 className="font-display text-6xl leading-[0.88] text-stone-50 sm:text-7xl">AUTH GATE</h1>
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90 sm:text-sm sm:tracking-[0.32em]">
+            관리자 로그
+          </p>
+          <h1 className="font-display text-[clamp(2.6rem,5vw,4.8rem)] leading-[0.92] text-stone-50 text-balance break-words">
+            인증 필요
+          </h1>
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-300 text-pretty break-words">
             운영 로그에는 외부 API 오류와 내부 컨텍스트가 포함될 수 있으므로 관리자 토큰으로만 접근할 수 있습니다.
           </p>
 
           <form onSubmit={handleAuthenticate} className="mt-8 max-w-xl rounded-[28px] border border-white/8 bg-black/20 p-5">
             <label className="block">
-              <span className="mb-2 block text-sm text-slate-300">Admin Token</span>
+              <span className="mb-2 block text-sm text-slate-300">관리자 토큰</span>
               <input
                 type="password"
                 value={token}
@@ -160,13 +168,13 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
                 disabled={isAuthenticating || !token.trim()}
                 className="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#66dcff] to-[#2eb7ff] px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isAuthenticating ? "Checking..." : "Unlock Logs"}
+                {isAuthenticating ? "확인 중..." : "로그 열기"}
               </button>
               <Link
                 href="/dashboard"
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
               >
-                Dashboard
+                대시보드
               </Link>
             </div>
           </form>
@@ -182,9 +190,13 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
       <section className="panel-shell rounded-[32px] p-6 lg:p-7">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.34em] text-cyan-300/90">Admin Logs</p>
-            <h1 className="font-display text-6xl leading-[0.88] text-stone-50 sm:text-7xl">REQUEST TRACE</h1>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90 sm:text-sm sm:tracking-[0.32em]">
+              관리자 로그
+            </p>
+            <h1 className="font-display text-[clamp(2.6rem,5vw,4.8rem)] leading-[0.92] text-stone-50 text-balance break-words">
+              요청 추적
+            </h1>
+            <p className="mt-4 text-sm leading-7 text-slate-300 text-pretty break-words">
               외부 API 실패, 작업 실패, 내부 예외를 실시간으로 확인하는 운영 콘솔입니다. 민감 값은 서버에서
               마스킹된 상태로만 표시됩니다.
             </p>
@@ -195,21 +207,21 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
               href="/dashboard"
               className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
             >
-              Dashboard
+              대시보드
             </Link>
             <button
               type="button"
               onClick={() => void loadLogs()}
               className="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#66dcff] to-[#2eb7ff] px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-950"
             >
-              Refresh
+              새로고침
             </button>
             <button
               type="button"
               onClick={() => void handleLogout()}
               className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
             >
-              Lock
+              잠금
             </button>
           </div>
         </div>
@@ -218,8 +230,10 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
       <section className="surface-panel mt-5 rounded-[32px] p-6">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300/90">Monitor</p>
-            <h2 className="font-display text-4xl leading-none text-stone-100">최근 로그 200개</h2>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">모니터링</p>
+            <h2 className="font-display text-[clamp(1.9rem,3vw,2.6rem)] leading-[1.05] text-stone-100 text-balance break-words">
+              최근 로그 200개
+            </h2>
           </div>
           <span className="rounded-full border border-white/8 bg-white/5 px-4 py-2 text-sm text-slate-300">{status}</span>
         </div>
@@ -250,8 +264,8 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
                     {log.level}
                   </span>
                 </div>
-                <h3 className="text-lg font-semibold text-stone-100">{log.message}</h3>
-                {log.context && (
+                <h3 className="text-lg font-semibold text-stone-100 break-words">{log.message}</h3>
+                {log.context != null && (
                   <pre className="mt-4 overflow-x-auto rounded-[18px] border border-white/6 bg-black/25 p-4 text-xs leading-6 text-slate-300">
                     {formatContext(log.context)}
                   </pre>
@@ -260,7 +274,7 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
             ))
           ) : (
             <div className="rounded-[24px] border border-dashed border-white/10 bg-black/15 px-6 py-12 text-center">
-              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">No Logs</p>
+              <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">로그 없음</p>
               <p className="mt-3 text-sm leading-7 text-slate-400">아직 기록된 로그가 없거나 불러오지 못했습니다.</p>
             </div>
           )}

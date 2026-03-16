@@ -18,6 +18,21 @@ const SECTION_TITLES: Record<SectionKey, string> = {
   utility: "스킬 효율성"
 };
 
+const JOB_STATUS_LABELS: Record<AnalysisSnapshot["status"], string> = {
+  queued: "대기",
+  collecting: "수집 중",
+  analyzing: "분석 중",
+  completed: "완료",
+  failed: "실패"
+};
+
+const SECTION_STATUS_LABELS: Record<JobSectionPayload["status"], string> = {
+  pending: "대기",
+  running: "진행 중",
+  completed: "완료",
+  error: "오류"
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -47,6 +62,14 @@ function formatRatio(value: number): string {
 
 function clampPercent(value: number): number {
   return Math.max(0, Math.min(100, Math.round(value * 100)));
+}
+
+function formatJobStatus(status: AnalysisSnapshot["status"]): string {
+  return JOB_STATUS_LABELS[status] ?? status;
+}
+
+function formatSectionStatus(status: JobSectionPayload["status"]): string {
+  return SECTION_STATUS_LABELS[status] ?? status;
 }
 
 function buildIdleSnapshot(riotId: string, riotTag: string): AnalysisSnapshot {
@@ -93,7 +116,9 @@ function ProgressBar({ percent, live }: { percent: number; live: boolean }) {
 function StatCard({ label, value, hint }: { label: string; value: string; hint: string }) {
   return (
     <article className="surface-panel glow-outline rounded-[24px] p-5">
-      <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-cyan-300/90">{label}</p>
+      <p className="mb-2 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-cyan-300/90 sm:tracking-[0.26em]">
+        {label}
+      </p>
       <h3 className="font-display text-4xl leading-none text-stone-50">{value}</h3>
       <p className="mt-3 text-sm leading-6 text-slate-400">{hint}</p>
     </article>
@@ -120,7 +145,7 @@ function AttackDefenseVisual({ raw }: { raw: Record<string, unknown> }) {
   return (
     <div className="grid gap-4 md:grid-cols-2">
       <div className="rounded-[18px] border border-white/6 bg-black/15 p-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Attack</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">공격</p>
         <div className="space-y-4">
           <MetricRow label="KDA" value={formatRatio(getNumber(attack, "kdaRatio"))} rate={getNumber(attack, "kdaRatio") * 30} />
           <MetricRow label="라운드 승률" value={formatPercent(getNumber(attack, "roundWinRate"))} rate={clampPercent(getNumber(attack, "roundWinRate"))} />
@@ -128,7 +153,7 @@ function AttackDefenseVisual({ raw }: { raw: Record<string, unknown> }) {
         </div>
       </div>
       <div className="rounded-[18px] border border-white/6 bg-black/15 p-4">
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">Defense</p>
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">수비</p>
         <div className="space-y-4">
           <MetricRow label="KDA" value={formatRatio(getNumber(defense, "kdaRatio"))} rate={getNumber(defense, "kdaRatio") * 30} />
           <MetricRow label="라운드 승률" value={formatPercent(getNumber(defense, "roundWinRate"))} rate={clampPercent(getNumber(defense, "roundWinRate"))} />
@@ -180,7 +205,7 @@ function ClutchVisual({ raw }: { raw: Record<string, unknown> }) {
     <div className="space-y-4">
       <div className="rounded-[18px] border border-white/6 bg-black/15 p-4">
         <div className="mb-4 flex flex-wrap items-center gap-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">Overall Clutch</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-300">전체 클러치</p>
           <span className="rounded-full border border-white/8 bg-white/5 px-3 py-1 text-xs text-slate-300">
             {getNumber(overall, "attempts")} attempts
           </span>
@@ -214,7 +239,7 @@ function UtilityVisual({ raw }: { raw: Record<string, unknown> }) {
   return (
     <div className="grid gap-4 md:grid-cols-[1.4fr_1fr]">
       <div className="rounded-[18px] border border-white/6 bg-black/15 p-4">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Utility Throughput</p>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">유틸리티 사용량</p>
         <div className="space-y-4">
           <MetricRow label="라운드당 스킬 사용" value={formatRatio(getNumber(raw, "castsPerRound"))} rate={Math.min(100, getNumber(raw, "castsPerRound") * 40)} />
           <MetricRow label="10회당 어시스트" value={formatRatio(getNumber(raw, "assistsPer10Casts"))} rate={Math.min(100, getNumber(raw, "assistsPer10Casts") * 25)} />
@@ -222,7 +247,7 @@ function UtilityVisual({ raw }: { raw: Record<string, unknown> }) {
         </div>
       </div>
       <div className="rounded-[18px] border border-white/6 bg-black/15 p-4">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">Cast Mix</p>
+        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">스킬 사용 구성</p>
         <div className="space-y-3">
           <MetricRow label="기본 스킬" value={`${getNumber(castsByType, "grenade")}`} rate={Math.min(100, getNumber(castsByType, "grenade"))} />
           <MetricRow label="보조 스킬" value={`${getNumber(castsByType, "ability1")}`} rate={Math.min(100, getNumber(castsByType, "ability1"))} />
@@ -279,17 +304,19 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
     <article className="surface-panel glow-outline rounded-[28px] p-5">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <p className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.28em] text-cyan-300/90">
+          <p className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-cyan-300/90 sm:tracking-[0.24em]">
             {section.key.replaceAll("_", " ")}
           </p>
-          <h3 className="font-display text-3xl leading-none text-stone-100">{section.title}</h3>
+          <h3 className="font-display text-3xl leading-none text-stone-100 text-balance break-words">
+            {section.title}
+          </h3>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${badgeClass}`}>
-          {section.status}
+          {formatSectionStatus(section.status)}
         </span>
       </div>
 
-      <p className="mb-4 text-sm leading-6 text-slate-400">{stateCopy}</p>
+      <p className="mb-4 text-sm leading-6 text-slate-400 text-pretty break-words">{stateCopy}</p>
 
       {(section.status === "running" || section.status === "pending") && (
         <div className="mb-4 inline-flex items-center gap-3 rounded-full border border-white/8 bg-white/5 px-4 py-2 text-sm text-slate-300">
@@ -302,11 +329,11 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
 
       <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_1.1fr]">
         <div className="rounded-[20px] border border-white/6 bg-black/15 p-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Segmented Facts</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">세그먼트 요약</p>
           <ul className="space-y-2 text-sm leading-6 text-slate-300">
             {section.facts.length ? (
               section.facts.map((fact) => (
-                <li key={fact} className="rounded-2xl border border-white/5 bg-white/4 px-3 py-2">
+                <li key={fact} className="rounded-2xl border border-white/5 bg-white/4 px-3 py-2 break-words">
                   {fact}
                 </li>
               ))
@@ -317,16 +344,20 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
         </div>
 
         <div className="rounded-[20px] border border-white/6 bg-black/15 p-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">Gemini Feedback</p>
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">Gemini 피드백</p>
           {section.analysis ? (
             <div className="space-y-4">
               <div>
-                <h4 className="font-display text-2xl leading-none text-stone-100">{section.analysis.headline}</h4>
-                <p className="mt-3 text-sm leading-6 text-slate-300">{section.analysis.summary}</p>
+                <h4 className="font-display text-2xl leading-none text-stone-100 text-balance break-words">
+                  {section.analysis.headline}
+                </h4>
+                <p className="mt-3 text-sm leading-6 text-slate-300 text-pretty break-words">
+                  {section.analysis.summary}
+                </p>
               </div>
               <ol className="space-y-2 text-sm leading-6 text-slate-200">
                 {section.analysis.actions.map((action) => (
-                  <li key={action} className="rounded-2xl border border-rose-500/15 bg-rose-500/8 px-3 py-2">
+                  <li key={action} className="rounded-2xl border border-rose-500/15 bg-rose-500/8 px-3 py-2 break-words">
                     {action}
                   </li>
                 ))}
@@ -337,7 +368,7 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
           )}
 
           {section.error && (
-            <p className="mt-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-sm leading-6 text-orange-200">
+            <p className="mt-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-sm leading-6 text-orange-200 break-words">
               {section.error}
             </p>
           )}
@@ -355,7 +386,7 @@ function AuthBanner({ authState }: { authState?: string }) {
   const copyMap: Record<string, { title: string; body: string; tone: string }> = {
     missing_rso_config: {
       title: "RSO 설정이 비어 있습니다.",
-      body: "RIOT_RSO_CLIENT_ID와 RIOT_RSO_REDIRECT_URI를 .env.local에 채워야 Sign-On 버튼이 실제로 동작합니다.",
+      body: "RIOT_RSO_CLIENT_ID와 RIOT_RSO_REDIRECT_URI를 .env.local에 채워야 로그인 버튼이 실제로 동작합니다.",
       tone: "badge-warning"
     },
     code_received: {
@@ -370,7 +401,7 @@ function AuthBanner({ authState }: { authState?: string }) {
     },
     access_denied: {
       title: "RSO 접근 거부",
-      body: "사용자가 Riot Sign-On 승인을 취소했거나 제공자가 요청을 거부했습니다.",
+      body: "사용자가 Riot 로그인을 취소했거나 제공자가 요청을 거부했습니다.",
       tone: "badge-error"
     }
   };
@@ -386,9 +417,11 @@ function AuthBanner({ authState }: { authState?: string }) {
         <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${content.tone}`}>
           RSO
         </span>
-        <h2 className="font-display text-3xl leading-none text-stone-100">{content.title}</h2>
+        <h2 className="font-display text-[clamp(1.9rem,3vw,2.6rem)] leading-[1.05] text-stone-100 text-balance break-words">
+          {content.title}
+        </h2>
       </div>
-      <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300">{content.body}</p>
+      <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 text-pretty break-words">{content.body}</p>
     </div>
   );
 }
@@ -465,34 +498,34 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
   const statusMeta = !snapshot
     ? {
         pill: "bg-white/8 text-slate-300",
-        label: "READY",
+        label: "대기",
         title: "분석 대상 입력 후 전술 코칭을 시작하세요.",
         body: "최근 경쟁전 매치 수집 후, 4개 상황 세그먼트를 순차 분석합니다."
       }
     : snapshot.status === "failed"
       ? {
           pill: "badge-error",
-          label: "FAILED",
+          label: "실패",
           title: "분석이 중단되었습니다.",
           body: snapshot.currentStep
         }
       : snapshot.status === "completed" && sections.some((section) => section.status === "error")
         ? {
             pill: "badge-warning",
-            label: "PARTIAL",
+            label: "부분 완료",
             title: "일부 섹션만 완료되었습니다.",
             body: snapshot.currentStep
           }
         : snapshot.status === "completed"
           ? {
               pill: "badge-success",
-              label: "DONE",
+              label: "완료",
               title: "모든 섹션 분석이 완료되었습니다.",
               body: snapshot.currentStep
             }
           : {
               pill: "badge-info",
-              label: "LIVE",
+              label: "진행 중",
               title: snapshot.status === "collecting" ? "최근 매치를 수집 중입니다." : "Gemini가 순차 분석 중입니다.",
               body: snapshot.currentStep
             };
@@ -546,9 +579,13 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
       <section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="space-y-5">
           <div className="panel-shell rounded-[30px] p-6">
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.34em] text-cyan-300/90">Reviewer Build</p>
-            <h1 className="font-display text-6xl leading-[0.88] text-stone-50 sm:text-7xl">TACTICAL DASHBOARD</h1>
-            <p className="mt-4 text-sm leading-7 text-slate-300">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90 sm:text-sm sm:tracking-[0.32em]">
+              심사용 빌드
+            </p>
+            <h1 className="font-display text-[clamp(2.2rem,4.2vw,3.8rem)] leading-[0.95] text-stone-50 text-balance break-words">
+              전술 대시보드
+            </h1>
+            <p className="mt-4 text-sm leading-7 text-slate-300 text-pretty break-words">
               Riot API 계정 데이터와 Gemini 코칭을 묶은 풀스택 프로토타입입니다. RSO 진입점, 보호된 관리자 로그, 상황별
               세분화 분석까지 한 화면에서 검토할 수 있습니다.
             </p>
@@ -556,33 +593,35 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/api/auth/login"
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#ff7b46] to-[#ff4655] px-5 text-sm font-semibold uppercase tracking-[0.18em] text-white shadow-[0_18px_36px_rgba(255,70,85,0.28)] hover:-translate-y-0.5"
+                className="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#ff7b46] to-[#ff4655] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-white shadow-[0_18px_36px_rgba(255,70,85,0.28)] hover:-translate-y-0.5 sm:tracking-[0.18em]"
               >
-                Riot Sign-On
+                Riot 로그인
               </Link>
               <Link
                 href="/"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.14em] text-slate-200 hover:bg-white/8 sm:tracking-[0.18em]"
               >
-                Landing
+                랜딩
               </Link>
               <Link
                 href="/admin/logs"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
+                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.14em] text-slate-200 hover:bg-white/8 sm:tracking-[0.18em]"
               >
-                Admin Logs
+                관리자 로그
               </Link>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="surface-panel rounded-[30px] p-6">
             <div className="mb-6">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300/90">Analyze</p>
-              <h2 className="font-display text-4xl leading-none text-stone-100">Match Intake</h2>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">분석</p>
+              <h2 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] leading-[1.05] text-stone-100 text-balance break-words">
+                매치 입력
+              </h2>
             </div>
 
             <label className="mb-4 block">
-              <span className="mb-2 block text-sm text-slate-300">Riot ID</span>
+              <span className="mb-2 block text-sm text-slate-300">Riot 아이디</span>
               <input
                 value={riotId}
                 onChange={(event) => setRiotId(event.target.value)}
@@ -593,7 +632,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
             </label>
 
             <label className="mb-5 block">
-              <span className="mb-2 block text-sm text-slate-300">Tag</span>
+              <span className="mb-2 block text-sm text-slate-300">태그</span>
               <input
                 value={riotTag}
                 onChange={(event) => setRiotTag(event.target.value)}
@@ -606,9 +645,9 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
             <button
               type="submit"
               disabled={isSubmitting}
-              className="inline-flex min-h-13 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff7b46] to-[#ff4655] px-5 text-sm font-semibold uppercase tracking-[0.22em] text-white shadow-[0_18px_36px_rgba(255,70,85,0.28)] disabled:cursor-wait disabled:opacity-70"
+              className="inline-flex min-h-13 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff7b46] to-[#ff4655] px-5 text-sm font-semibold uppercase tracking-[0.16em] text-white shadow-[0_18px_36px_rgba(255,70,85,0.28)] disabled:cursor-wait disabled:opacity-70 sm:tracking-[0.22em]"
             >
-              {isSubmitting ? "Analyzing..." : "Start Analysis"}
+              {isSubmitting ? "분석 중..." : "분석 시작"}
             </button>
 
             <div className="mt-5 space-y-2 text-sm leading-6 text-slate-400">
@@ -624,12 +663,20 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
           </form>
 
           <div className="surface-panel rounded-[30px] p-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300/90">Pipeline</p>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">분석 파이프라인</p>
             <ol className="space-y-3 text-sm leading-6 text-slate-300">
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3">1. Riot 계정 조회 및 최근 경기 수집</li>
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3">2. 공수/경제/클러치/유틸 세그먼트 계산</li>
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3">3. Gemini를 섹션 단위로 순차 호출</li>
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3">4. 완료된 카드부터 즉시 대시보드에 반영</li>
+              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
+                1. Riot 계정 조회 및 최근 경기 수집
+              </li>
+              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
+                2. 공수/경제/클러치/유틸 세그먼트 계산
+              </li>
+              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
+                3. Gemini를 섹션 단위로 순차 호출
+              </li>
+              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
+                4. 완료된 카드부터 즉시 대시보드에 반영
+              </li>
             </ol>
           </div>
         </aside>
@@ -642,7 +689,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${statusMeta.pill}`}>
                     {statusMeta.label}
                   </span>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Riot Reviewer Dashboard</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Riot 심사 대시보드</p>
                 </div>
                 <h2 className="font-display text-5xl leading-[0.9] text-stone-100 sm:text-6xl">{statusMeta.title}</h2>
                 <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{statusMeta.body}</p>
@@ -650,12 +697,12 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
 
               <div className="min-w-[260px] rounded-[24px] border border-white/8 bg-black/20 p-5">
                 <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300/90">Progress</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300/90">진행률</p>
                   <span className="text-sm font-semibold text-stone-100">{percent}%</span>
                 </div>
                 <ProgressBar percent={live && percent === 0 ? 8 : percent} live={live} />
                 <p className="mt-3 text-sm text-slate-400">
-                  {resolvedCount} / {sections.length || 4} sections resolved
+                  완료 {resolvedCount} / {sections.length || 4}
                 </p>
               </div>
             </div>
@@ -663,12 +710,12 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              label="Matches"
+              label="매치"
               value={`${getNumber(overviewRaw, "matchesAnalyzed") || 0}`}
               hint="최근 분석 대상으로 수집된 경기 수"
             />
             <StatCard
-              label="Win Rate"
+              label="승률"
               value={snapshot?.overview.raw ? formatPercent(getNumber(overviewRaw, "matchWinRate")) : "-"}
               hint="전체 분석 표본 기준 매치 승률"
             />
@@ -687,20 +734,20 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
           <div className="surface-panel rounded-[30px] p-6">
             <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
               <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.3em] text-cyan-300/90">Overview</p>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">요약</p>
                 <h2 className="font-display text-4xl leading-none text-stone-100">
-                  {snapshot ? `${snapshot.player.riotId}#${snapshot.player.riotTag}` : "No Active Snapshot"}
+                  {snapshot ? `${snapshot.player.riotId}#${snapshot.player.riotTag}` : "활성 스냅샷 없음"}
                 </h2>
               </div>
               <span className="rounded-full border border-white/8 bg-white/5 px-4 py-2 text-sm text-slate-300">
-                {snapshot?.player.puuidMasked || "PUUID pending"}
+                {snapshot?.player.puuidMasked || "PUUID 대기 중"}
               </span>
             </div>
 
             {snapshot ? (
               <div className="grid gap-4 xl:grid-cols-[1fr_1.3fr]">
                 <div className="rounded-[22px] border border-white/6 bg-black/15 p-5">
-                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">Key Facts</p>
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">핵심 요약</p>
                   <ul className="space-y-3 text-sm leading-6 text-slate-300">
                     {snapshot.overview.facts.map((fact) => (
                       <li key={fact} className="rounded-2xl border border-white/5 bg-white/4 px-4 py-3">
@@ -710,26 +757,26 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
                   </ul>
                 </div>
                 <div className="rounded-[22px] border border-white/6 bg-black/15 p-5">
-                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">Reviewer Notes</p>
+                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">리뷰어 노트</p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Status</p>
-                      <p className="mt-2 text-lg font-semibold text-stone-100">{snapshot.status}</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">상태</p>
+                      <p className="mt-2 text-lg font-semibold text-stone-100">{formatJobStatus(snapshot.status)}</p>
                     </div>
                     <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Current Step</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">현재 단계</p>
                       <p className="mt-2 text-sm leading-6 text-slate-300">{snapshot.currentStep}</p>
                     </div>
                     <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Completed</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">완료</p>
                       <p className="mt-2 text-lg font-semibold text-stone-100">
                         {snapshot.progress.completed} / {snapshot.progress.total}
                       </p>
                     </div>
                     <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">Current Key</p>
+                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">현재 항목</p>
                       <p className="mt-2 text-lg font-semibold text-stone-100">
-                        {snapshot.progress.currentKey ? SECTION_TITLES[snapshot.progress.currentKey] : "None"}
+                        {snapshot.progress.currentKey ? SECTION_TITLES[snapshot.progress.currentKey] : "없음"}
                       </p>
                     </div>
                   </div>
@@ -737,10 +784,10 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
               </div>
             ) : (
               <div className="rounded-[22px] border border-dashed border-white/10 bg-black/15 px-6 py-10 text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">Ready</p>
+                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">대기</p>
                 <h3 className="mt-3 font-display text-4xl leading-none text-stone-100">RSO 버튼 또는 직접 입력으로 분석을 시작하세요.</h3>
                 <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-                  현재 프로토타입은 Riot Sign-On 골격, 관리자 로그, 상황별 통계 카드, Gemini 행동 피드백 흐름까지 포함합니다.
+                  현재 프로토타입은 Riot 로그인 골격, 관리자 로그, 상황별 통계 카드, Gemini 행동 피드백 흐름까지 포함합니다.
                 </p>
               </div>
             )}
