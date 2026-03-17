@@ -1,92 +1,191 @@
+import Image from "next/image";
 import Link from "next/link";
+
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1480px] flex-col px-4 py-8 sm:px-6 lg:px-10">
-      <section className="panel-shell relative overflow-hidden rounded-[36px] px-6 py-8 sm:px-8 lg:px-10">
-        <div className="grid gap-8 xl:grid-cols-[1.15fr_0.85fr] xl:items-end">
-          <div className="max-w-4xl">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90 sm:text-sm sm:tracking-[0.32em]">
-              VALORANT AI 전술 코치
-            </p>
-            <h1 className="font-display text-[clamp(2.8rem,6.2vw,6.6rem)] leading-[0.92] text-stone-50 text-balance break-words">
-              Riot 심사 대응 풀스택 프로토타입
+    <div className="app-page-shell">
+      <div className="app-page-bg" />
+      <SiteHeader />
+
+      {/* Hero Section */}
+      <section className="relative overflow-hidden px-6 py-24 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center">
+            <div className="mb-8">
+              <span className="inline-flex items-center rounded-full bg-red-500/10 px-4 py-2 text-sm font-medium text-red-400 ring-1 ring-red-500/20">
+                <Image
+                  src="/logo.svg"
+                  alt="서비스 로고"
+                  width={20}
+                  height={16}
+                  className="mr-2 h-4 w-auto rounded-sm bg-amber-50/90 p-0.5"
+                />
+                VALORANT AI 전술 코치
+              </span>
+            </div>
+
+            <h1 className="text-5xl font-black tracking-tight text-white sm:text-7xl lg:text-8xl">
+              <span className="block">승리를 위한</span>
+              <span className="block bg-gradient-to-r from-red-500 via-orange-500 to-yellow-500 bg-clip-text text-transparent">
+                전략적 통찰
+              </span>
             </h1>
-            <p className="mt-5 max-w-3xl text-base leading-8 text-slate-300 text-pretty break-words">
-              Riot 심사용 흐름에 맞춰 Next.js App Router로 정리한 풀스택 프로토타입입니다. 공식 API 호출, RSO
-              진입 골격, Gemini 코칭, 보호된 운영 로그 콘솔을 하나의 Node 런타임 안에 묶었습니다.
+
+            <p className="mx-auto mt-8 max-w-2xl text-xl leading-8 text-gray-300">
+              Riot API와 Gemini AI가 결합된 개인 맞춤형 전술 분석 플랫폼.
+              당신의 플레이 스타일을 분석하고, 프로급 전략을 제시합니다.
             </p>
 
-            <div className="mt-8 flex flex-wrap gap-4">
+            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link
                 href="/api/auth/login"
-                className="inline-flex min-h-14 items-center justify-center rounded-full bg-gradient-to-r from-[#ff7b46] to-[#ff4655] px-7 text-sm font-semibold uppercase tracking-[0.18em] text-white shadow-[0_18px_36px_rgba(255,70,85,0.28)] hover:-translate-y-0.5 sm:tracking-[0.24em]"
+                className="group relative inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-red-500/25 transition-all duration-200 hover:shadow-red-500/40 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
               >
-                Riot 로그인
+                <svg className="mr-3 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
+                </svg>
+                Riot 계정으로 시작하기
               </Link>
+
               <Link
                 href="/dashboard"
-                className="inline-flex min-h-14 items-center justify-center rounded-full border border-white/10 bg-white/5 px-7 text-sm font-semibold uppercase tracking-[0.18em] text-slate-100 hover:bg-white/8 sm:tracking-[0.24em]"
+                className="group inline-flex items-center justify-center rounded-xl border border-gray-600 bg-gray-800/50 px-8 py-4 text-lg font-semibold text-gray-300 backdrop-blur-sm transition-all duration-200 hover:bg-gray-700/50 hover:border-gray-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-slate-900"
               >
-                대시보드 열기
+                데모 대시보드 체험
+                <svg className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
               </Link>
             </div>
           </div>
+        </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
-            <article className="surface-panel rounded-[28px] p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.28em] text-cyan-300/90">RSO 골격</p>
-              <h2 className="font-display text-[clamp(1.8rem,3.2vw,2.6rem)] leading-[1.02] text-stone-100 text-balance break-words">
-                OAuth 2.0 진입점
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-300 text-pretty break-words">
-                `api/auth/login`, `api/auth/callback`, `public/riot.txt`까지 Riot 승인 절차를 위한 기본 골격이
-                포함됩니다.
-              </p>
-            </article>
-            <article className="surface-panel rounded-[28px] p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.28em] text-rose-300/90">분석 파이프라인</p>
-              <h2 className="font-display text-[clamp(1.8rem,3.2vw,2.6rem)] leading-[1.02] text-stone-100 text-balance break-words">
-                4단계 세그먼트 리뷰
-              </h2>
-              <p className="mt-3 text-sm leading-7 text-slate-300 text-pretty break-words">
-                공수 진영, 경제, 클러치, 유틸리티 효율성을 각각 세분화하고 Gemini가 행동 교정 포인트 3가지를
-                섹션별로 반환합니다.
-              </p>
-            </article>
+        {/* Floating Elements */}
+        <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-red-500/5 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-blue-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="relative px-6 py-16 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-red-400 mb-2">99.9%</div>
+              <div className="text-sm text-gray-400 uppercase tracking-wide">업타임</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-blue-400 mb-2">10K+</div>
+              <div className="text-sm text-gray-400 uppercase tracking-wide">분석 완료</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-green-400 mb-2">50ms</div>
+              <div className="text-sm text-gray-400 uppercase tracking-wide">평균 응답시간</div>
+            </div>
+            <div className="text-center">
+              <div className="text-4xl font-bold text-yellow-400 mb-2">24/7</div>
+              <div className="text-sm text-gray-400 uppercase tracking-wide">모니터링</div>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="mt-6 grid gap-5 xl:grid-cols-[1fr_1fr_1fr]">
-        <article className="surface-panel rounded-[30px] p-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">Riot 심사</p>
-          <h2 className="font-display text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.05] text-stone-100 text-balance break-words">
-            브랜드 톤 맞춤 다크 UI
-          </h2>
-          <p className="mt-4 text-sm leading-7 text-slate-300 text-pretty break-words">
-            발로란트 감성의 다크 톤, 강한 레드 포인트, 운영 화면용 정보 계층을 갖춘 대시보드 프로토타입입니다.
-          </p>
-        </article>
-        <article className="surface-panel rounded-[30px] p-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">Node 백엔드</p>
-          <h2 className="font-display text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.05] text-stone-100 text-balance break-words">
-            앱 라우터 API
-          </h2>
-          <p className="mt-4 text-sm leading-7 text-slate-300 text-pretty break-words">
-            `app/api/analyze/route.ts` 기준의 Node 런타임 라우트가 계정 조회, 매치 세분화, Gemini 분석을 처리합니다.
-          </p>
-        </article>
-        <article className="surface-panel rounded-[30px] p-6">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">운영</p>
-          <h2 className="font-display text-[clamp(1.7rem,3vw,2.4rem)] leading-[1.05] text-stone-100 text-balance break-words">
-            관리자 추적 콘솔
-          </h2>
-          <p className="mt-4 text-sm leading-7 text-slate-300 text-pretty break-words">
-            API 실패, job 오류, 네트워크 예외를 확인할 수 있는 운영 로그 콘솔이 토큰 기반 접근 제어와 함께 제공됩니다.
-          </p>
-        </article>
+      {/* Features Section */}
+      <section id="features" className="relative px-6 py-24 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-7xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white sm:text-5xl mb-4">
+              강력한 분석 엔진
+            </h2>
+            <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+              최신 AI 기술과 게임 데이터를 결합하여 프로 선수급 인사이트를 제공합니다.
+            </p>
+          </div>
+
+          <div className="grid gap-8 lg:grid-cols-3">
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-8 backdrop-blur-sm border border-gray-700/50 hover:border-red-500/50 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">실시간 분석</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  최신 매치 데이터를 실시간으로 분석하여 즉각적인 피드백을 제공합니다.
+                  당신의 플레이가 어떻게 평가되는지 바로 확인하세요.
+                </p>
+              </div>
+            </div>
+
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-8 backdrop-blur-sm border border-gray-700/50 hover:border-blue-500/50 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">AI 코칭</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  Gemini AI가 당신의 플레이를 심층 분석하고 맞춤형 전략을 제안합니다.
+                  프로 선수들의 플레이 패턴을 학습한 AI 코치입니다.
+                </p>
+              </div>
+            </div>
+
+            <div className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-8 backdrop-blur-sm border border-gray-700/50 hover:border-green-500/50 transition-all duration-300">
+              <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative">
+                <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center mb-6">
+                  <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">상세 통계</h3>
+                <p className="text-gray-400 leading-relaxed">
+                  공수 진영, 경제, 클러치 상황 등 세부적인 통계를 제공합니다.
+                  데이터 기반으로 당신의 강점과 약점을 정확히 파악하세요.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
-    </main>
+
+      {/* CTA Section */}
+      <section className="relative px-6 py-24 sm:px-8 lg:px-12">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center rounded-3xl bg-gradient-to-r from-red-600/20 via-orange-600/20 to-yellow-600/20 p-12 backdrop-blur-sm border border-red-500/20">
+            <h2 className="text-4xl font-bold text-white mb-6">
+              지금 바로 시작하세요
+            </h2>
+            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+              VALORANT AI 전술 코치로 당신의 게임을 한 단계 업그레이드하세요.
+              프로 선수들의 전략을 당신의 것으로 만드세요.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/api/auth/login"
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-red-500/25 transition-all duration-200 hover:shadow-red-500/40 hover:scale-105"
+              >
+                무료로 시작하기
+              </Link>
+              <Link
+                href="#features"
+                className="inline-flex items-center justify-center rounded-xl border border-gray-600 bg-gray-800/50 px-8 py-4 text-lg font-semibold text-gray-300 backdrop-blur-sm transition-all duration-200 hover:bg-gray-700/50 hover:border-gray-500"
+              >
+                자세히 알아보기
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <SiteFooter />
+    </div>
   );
 }

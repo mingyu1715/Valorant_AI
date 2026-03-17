@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { startTransition, useEffect, useRef, useState } from "react";
 
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
 import type { AnalysisSnapshot, JobSectionPayload, SectionKey } from "@/src/server/types";
 
 type DashboardShellProps = {
@@ -301,80 +302,307 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
             : "세분화 데이터를 계산 중입니다.";
 
   return (
-    <article className="surface-panel glow-outline rounded-[28px] p-5">
-      <div className="mb-4 flex items-start justify-between gap-4">
+    <article className="rounded-lg bg-gray-800 p-6">
+      <div className="mb-4 flex items-start justify-between">
         <div>
-          <p className="mb-1 text-[0.72rem] font-semibold uppercase tracking-[0.18em] text-cyan-300/90 sm:tracking-[0.24em]">
+          <p className="text-sm font-semibold text-blue-400 uppercase tracking-wide">
             {section.key.replaceAll("_", " ")}
           </p>
-          <h3 className="font-display text-3xl leading-none text-stone-100 text-balance break-words">
+          <h3 className="text-2xl font-bold text-white">
             {section.title}
           </h3>
         </div>
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${badgeClass}`}>
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${badgeClass}`}>
           {formatSectionStatus(section.status)}
         </span>
       </div>
 
-      <p className="mb-4 text-sm leading-6 text-slate-400 text-pretty break-words">{stateCopy}</p>
+      <p className="mb-4 text-gray-400 text-sm">{stateCopy}</p>
 
       {(section.status === "running" || section.status === "pending") && (
-        <div className="mb-4 inline-flex items-center gap-3 rounded-full border border-white/8 bg-white/5 px-4 py-2 text-sm text-slate-300">
-          <span className="h-3 w-3 animate-spin rounded-full border-2 border-cyan-400/20 border-t-cyan-300" />
+        <div className="mb-4 inline-flex items-center gap-3 rounded-full bg-gray-700 px-4 py-2 text-sm text-gray-300">
+          <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-400 border-t-blue-300"></div>
           {section.status === "running" ? "Gemini 분석 진행 중" : "순차 대기 중"}
         </div>
       )}
 
       <SectionVisual section={section} />
 
-      <div className="mt-5 grid gap-4 xl:grid-cols-[1fr_1.1fr]">
-        <div className="rounded-[20px] border border-white/6 bg-black/15 p-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">세그먼트 요약</p>
-          <ul className="space-y-2 text-sm leading-6 text-slate-300">
+      <div className="mt-6 grid gap-4 md:grid-cols-2">
+        <div className="rounded-lg bg-gray-700 p-4">
+          <h4 className="text-lg font-semibold text-blue-400 mb-3">세그먼트 요약</h4>
+          <ul className="space-y-2 text-sm text-gray-300">
             {section.facts.length ? (
-              section.facts.map((fact) => (
-                <li key={fact} className="rounded-2xl border border-white/5 bg-white/4 px-3 py-2 break-words">
+              section.facts.map((fact, index) => (
+                <li key={index} className="rounded bg-gray-600 p-3">
                   {fact}
                 </li>
               ))
             ) : (
-              <li className="text-slate-500">세분화 요약이 준비되면 여기에 표시됩니다.</li>
+              <li className="text-gray-500">세분화 요약이 준비되면 여기에 표시됩니다.</li>
             )}
           </ul>
         </div>
 
-        <div className="rounded-[20px] border border-white/6 bg-black/15 p-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">Gemini 피드백</p>
+        <div className="rounded-lg bg-gray-700 p-4">
+          <h4 className="text-lg font-semibold text-red-400 mb-3">Gemini 피드백</h4>
           {section.analysis ? (
             <div className="space-y-4">
               <div>
-                <h4 className="font-display text-2xl leading-none text-stone-100 text-balance break-words">
+                <h4 className="text-xl font-bold text-white">
                   {section.analysis.headline}
                 </h4>
-                <p className="mt-3 text-sm leading-6 text-slate-300 text-pretty break-words">
+                <p className="mt-2 text-gray-300 text-sm">
                   {section.analysis.summary}
                 </p>
               </div>
-              <ol className="space-y-2 text-sm leading-6 text-slate-200">
-                {section.analysis.actions.map((action) => (
-                  <li key={action} className="rounded-2xl border border-rose-500/15 bg-rose-500/8 px-3 py-2 break-words">
+              <ol className="space-y-2 text-sm text-gray-200">
+                {section.analysis.actions.map((action, index) => (
+                  <li key={index} className="rounded bg-red-900/20 border border-red-500/30 p-3">
                     {action}
                   </li>
                 ))}
               </ol>
             </div>
           ) : (
-            <p className="text-sm leading-6 text-slate-500">분석이 끝나면 실행 가능한 피드백 3가지가 표시됩니다.</p>
+            <p className="text-gray-500 text-sm">분석이 끝나면 실행 가능한 피드백 3가지가 표시됩니다.</p>
           )}
 
           {section.error && (
-            <p className="mt-4 rounded-2xl border border-orange-500/30 bg-orange-500/10 px-3 py-2 text-sm leading-6 text-orange-200 break-words">
+            <p className="mt-4 rounded bg-red-900 p-3 text-red-200 text-sm">
               {section.error}
             </p>
           )}
         </div>
       </div>
     </article>
+  );
+}
+
+function Sidebar() {
+  return null;
+}
+
+function AnalysisForm({
+  riotId,
+  setRiotId,
+  riotTag,
+  setRiotTag,
+  matchCount,
+  setMatchCount,
+  isSubmitting,
+  error,
+  onSubmit
+}: {
+  riotId: string;
+  setRiotId: (value: string) => void;
+  riotTag: string;
+  setRiotTag: (value: string) => void;
+  matchCount: number;
+  setMatchCount: (value: number) => void;
+  isSubmitting: boolean;
+  error: string | null;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+}) {
+  const [hasTagDelimiter, setHasTagDelimiter] = useState(riotTag.length > 0);
+
+  const handleRiotIdChange = (value: string) => {
+    if (value.includes("#")) {
+      const idx = value.indexOf("#");
+      const id = value.slice(0, idx);
+      const tag = value.slice(idx + 1);
+      setHasTagDelimiter(true);
+      setRiotId(id);
+      setRiotTag(tag);
+    } else {
+      setHasTagDelimiter(false);
+      setRiotId(value);
+      setRiotTag("");
+    }
+  };
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4">
+      <div className="rounded-lg bg-gray-800 p-6">
+        <h2 className="text-xl font-semibold text-white mb-4">VALORANT 전술 분석</h2>
+        <p className="text-gray-400 text-sm mb-4">경쟁전 매치만 분석 가능합니다.</p>
+
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-300 mb-2">Riot 계정 (아이디#태그)</label>
+          <input
+            value={`${riotId}${hasTagDelimiter ? "#" + riotTag : ""}`}
+            onChange={(event) => handleRiotIdChange(event.target.value)}
+            className="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white placeholder-gray-400 focus:border-red-500 focus:outline-none"
+            placeholder="YourRiotId#TAG"
+            autoComplete="off"
+            type="text"
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">최근 매치 개수</label>
+            <select
+              value={matchCount}
+              onChange={(event) => setMatchCount(Number(event.target.value))}
+              className="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:border-red-500 focus:outline-none"
+            >
+              <option value={5}>최근 5개</option>
+              <option value={10}>최근 10개</option>
+              <option value={20}>최근 20개</option>
+              <option value={30}>최근 30개</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">에피소드</label>
+            <select
+              disabled
+              className="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-gray-400 focus:border-red-500 focus:outline-none opacity-50 cursor-not-allowed"
+            >
+              <option>자동 선택</option>
+            </select>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full rounded-md bg-red-600 py-2 px-4 text-white hover:bg-red-500 disabled:opacity-50 transition-colors font-medium"
+        >
+          {isSubmitting ? "분석 중..." : "분석 시작"}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            throw new Error("테스트 에러: 에러 페이지 표시를 위한 의도적인 클라이언트 사이드 오류입니다.");
+          }}
+          className="w-full mt-2 rounded-md bg-orange-600 py-2 px-4 text-white hover:bg-orange-500 transition-colors text-sm"
+        >
+          에러 페이지 테스트
+        </button>
+
+        {error && (
+          <p className="mt-4 rounded-md bg-red-900 p-3 text-red-200 text-sm">
+            {error}
+          </p>
+        )}
+      </div>
+    </form>
+  );
+}
+
+function OverviewCard({
+  statusMeta,
+  percent,
+  live,
+  resolvedCount,
+  sections,
+  overviewRaw,
+  snapshot
+}: {
+  statusMeta: any;
+  percent: number;
+  live: boolean;
+  resolvedCount: number;
+  sections: any[];
+  overviewRaw: any;
+  snapshot: AnalysisSnapshot;
+}) {
+  return (
+    <div className="rounded-lg bg-gray-800 p-6">
+      {/* Status Header */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <span className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${statusMeta.pill}`}>
+            {statusMeta.label}
+          </span>
+          <h2 className="text-2xl font-bold text-white mt-2">{statusMeta.title}</h2>
+        </div>
+        <div className="text-right">
+          <p className="text-sm text-gray-400">진행률</p>
+          <p className="text-2xl font-bold text-white">{percent}%</p>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div className="w-full bg-gray-700 rounded-full h-2 mb-6">
+        <div
+          className="bg-red-600 h-2 rounded-full transition-all duration-300"
+          style={{ width: `${live && percent === 0 ? 8 : percent}%` }}
+        ></div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Player Info */}
+        <div>
+          <h3 className="text-xl font-semibold text-white mb-4">
+            {snapshot.player.riotId}#{snapshot.player.riotTag}
+          </h3>
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">상태</span>
+              <span className="text-sm font-semibold text-white">{formatJobStatus(snapshot.status)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">완료 섹션</span>
+              <span className="text-sm font-semibold text-white">{resolvedCount} / {sections.length || 4}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">현재 단계</span>
+              <span className="text-sm text-gray-300">{snapshot.currentStep}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center">
+            <p className="text-sm text-gray-400">매치</p>
+            <p className="text-2xl font-bold text-white">{getNumber(overviewRaw, "matchesAnalyzed") || 0}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-400">승률</p>
+            <p className="text-2xl font-bold text-white">{formatPercent(getNumber(overviewRaw, "matchWinRate"))}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-400">ACS</p>
+            <p className="text-2xl font-bold text-white">{getNumber(overviewRaw, "acs").toFixed(1)}</p>
+          </div>
+          <div className="text-center">
+            <p className="text-sm text-gray-400">KDA</p>
+            <p className="text-2xl font-bold text-white">{formatRatio(getNumber(overviewRaw, "kdaRatio"))}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Facts */}
+      {snapshot.overview.facts.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-lg font-semibold text-blue-400 mb-3">핵심 요약</h4>
+          <ul className="space-y-2">
+            {snapshot.overview.facts.map((fact, index) => (
+              <li key={index} className="rounded bg-gray-700 p-3 text-sm text-gray-300">
+                {fact}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function EmptyState() {
+  return (
+    <div className="rounded-lg bg-gray-800 p-6 text-center">
+      <p className="text-lg font-semibold text-amber-400">대기</p>
+      <h3 className="text-xl font-bold text-white mt-2">RSO 버튼 또는 직접 입력으로 분석을 시작하세요.</h3>
+      <p className="text-gray-400 mt-2">
+        현재 프로토타입은 Riot 로그인 골격, 관리자 로그, 상황별 통계 카드, Gemini 행동 피드백 흐름까지 포함합니다.
+      </p>
+    </div>
   );
 }
 
@@ -412,26 +640,28 @@ function AuthBanner({ authState }: { authState?: string }) {
   }
 
   return (
-    <div className="surface-panel mb-6 rounded-[24px] border border-white/8 p-5">
-      <div className="flex flex-wrap items-center gap-3">
-        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${content.tone}`}>
+    <div className="rounded-lg bg-gray-800 mb-6 p-5">
+      <div className="flex items-center gap-3 mb-3">
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${content.tone}`}>
           RSO
         </span>
-        <h2 className="font-display text-[clamp(1.9rem,3vw,2.6rem)] leading-[1.05] text-stone-100 text-balance break-words">
+        <h2 className="text-2xl font-bold text-white">
           {content.title}
         </h2>
       </div>
-      <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-300 text-pretty break-words">{content.body}</p>
+      <p className="text-gray-300 text-sm">{content.body}</p>
     </div>
   );
 }
 
 export function DashboardShell({ initialRiotId, initialRiotTag, authState }: DashboardShellProps) {
-  const [riotId, setRiotId] = useState(initialRiotId);
-  const [riotTag, setRiotTag] = useState(initialRiotTag);
+  const [riotId, setRiotId] = useState("");
+  const [riotTag, setRiotTag] = useState("");
+  const [matchCount, setMatchCount] = useState(10);
   const [snapshot, setSnapshot] = useState<AnalysisSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState<SectionKey>("attack_defense");
   const activeJobIdRef = useRef<string | null>(null);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -536,6 +766,16 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
     const normalizedRiotId = riotId.trim();
     const normalizedRiotTag = riotTag.trim();
     setError(null);
+    // # 포함 여부와 전체 길이만 체크
+    const fullAccount = `${riotId}${riotTag ? '#' + riotTag : ''}`;
+    if (!fullAccount.includes('#') || riotTag.trim() === "") {
+      setError('아이디와 태그를 모두 입력해야 합니다. 예시: 닉네임#태그');
+      return;
+    }
+    if (fullAccount.length < 3 || fullAccount.length > 21) {
+      setError("Riot 계정은 3~21자여야 합니다.");
+      return;
+    }
     setIsSubmitting(true);
     const idleSnapshot = buildIdleSnapshot(normalizedRiotId, normalizedRiotTag);
     setSnapshot(idleSnapshot);
@@ -573,233 +813,87 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
   }
 
   return (
-    <main className="mx-auto min-h-screen w-full max-w-[1500px] px-4 py-8 sm:px-6 lg:px-10">
-      <AuthBanner authState={authState} />
+    <div className="app-page-shell w-screen">
+      <div className="app-page-bg" />
+      <SiteHeader />
 
-      <section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <aside className="space-y-5">
-          <div className="panel-shell rounded-[30px] p-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-cyan-300/90 sm:text-sm sm:tracking-[0.32em]">
-              심사용 빌드
-            </p>
-            <h1 className="font-display text-[clamp(2.2rem,4.2vw,3.8rem)] leading-[0.95] text-stone-50 text-balance break-words">
-              전술 대시보드
-            </h1>
-            <p className="mt-4 text-sm leading-7 text-slate-300 text-pretty break-words">
-              Riot API 계정 데이터와 Gemini 코칭을 묶은 풀스택 프로토타입입니다. RSO 진입점, 보호된 관리자 로그, 상황별
-              세분화 분석까지 한 화면에서 검토할 수 있습니다.
-            </p>
+      <main className="relative z-10 w-full px-4 md:px-12 lg:px-24 xl:px-32 2xl:px-48 py-10 flex flex-col gap-12">
+        <AuthBanner authState={authState} />
 
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link
-                href="/api/auth/login"
-                className="inline-flex min-h-12 items-center justify-center rounded-full bg-gradient-to-r from-[#ff7b46] to-[#ff4655] px-5 text-sm font-semibold uppercase tracking-[0.14em] text-white shadow-[0_18px_36px_rgba(255,70,85,0.28)] hover:-translate-y-0.5 sm:tracking-[0.18em]"
-              >
-                Riot 로그인
-              </Link>
-              <Link
-                href="/"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.14em] text-slate-200 hover:bg-white/8 sm:tracking-[0.18em]"
-              >
-                랜딩
-              </Link>
-              <Link
-                href="/admin/logs"
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.14em] text-slate-200 hover:bg-white/8 sm:tracking-[0.18em]"
-              >
-                관리자 로그
-              </Link>
-            </div>
-          </div>
-
-          <form onSubmit={handleSubmit} className="surface-panel rounded-[30px] p-6">
-            <div className="mb-6">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">분석</p>
-              <h2 className="font-display text-[clamp(1.8rem,3vw,2.6rem)] leading-[1.05] text-stone-100 text-balance break-words">
-                매치 입력
-              </h2>
-            </div>
-
-            <label className="mb-4 block">
-              <span className="mb-2 block text-sm text-slate-300">Riot 아이디</span>
-              <input
-                value={riotId}
-                onChange={(event) => setRiotId(event.target.value)}
-                className="w-full rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-base text-stone-100 outline-none ring-0 placeholder:text-slate-500 focus:border-cyan-300/50 focus:bg-cyan-300/6"
-                placeholder="YourRiotId"
-                autoComplete="off"
-              />
-            </label>
-
-            <label className="mb-5 block">
-              <span className="mb-2 block text-sm text-slate-300">태그</span>
-              <input
-                value={riotTag}
-                onChange={(event) => setRiotTag(event.target.value)}
-                className="w-full rounded-[18px] border border-white/10 bg-white/5 px-4 py-3 text-base text-stone-100 outline-none ring-0 placeholder:text-slate-500 focus:border-cyan-300/50 focus:bg-cyan-300/6"
-                placeholder="TAG"
-                autoComplete="off"
-              />
-            </label>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex min-h-13 w-full items-center justify-center rounded-full bg-gradient-to-r from-[#ff7b46] to-[#ff4655] px-5 text-sm font-semibold uppercase tracking-[0.16em] text-white shadow-[0_18px_36px_rgba(255,70,85,0.28)] disabled:cursor-wait disabled:opacity-70 sm:tracking-[0.22em]"
-            >
-              {isSubmitting ? "분석 중..." : "분석 시작"}
-            </button>
-
-            <div className="mt-5 space-y-2 text-sm leading-6 text-slate-400">
-              <p>민감 키는 서버 전용 환경 변수로만 읽습니다.</p>
-              <p>실제 심사용 배포에서는 `USE_SAMPLE_ANALYTICS=1`로 데모 모드를 켤 수 있습니다.</p>
-            </div>
-
-            {error && (
-              <p className="mt-5 rounded-[20px] border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm leading-6 text-orange-200">
-                {error}
-              </p>
-            )}
-          </form>
-
-          <div className="surface-panel rounded-[30px] p-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">분석 파이프라인</p>
-            <ol className="space-y-3 text-sm leading-6 text-slate-300">
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
-                1. Riot 계정 조회 및 최근 경기 수집
-              </li>
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
-                2. 공수/경제/클러치/유틸 세그먼트 계산
-              </li>
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
-                3. Gemini를 섹션 단위로 순차 호출
-              </li>
-              <li className="rounded-[18px] border border-white/6 bg-white/4 px-4 py-3 break-words">
-                4. 완료된 카드부터 즉시 대시보드에 반영
-              </li>
-            </ol>
-          </div>
-        </aside>
-
-        <section className="space-y-5">
-          <div className="panel-shell rounded-[32px] p-6 lg:p-7">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div className="max-w-3xl">
-                <div className="mb-4 flex flex-wrap items-center gap-3">
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] ${statusMeta.pill}`}>
-                    {statusMeta.label}
-                  </span>
-                  <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-500">Riot 심사 대시보드</p>
-                </div>
-                <h2 className="font-display text-5xl leading-[0.9] text-stone-100 sm:text-6xl">{statusMeta.title}</h2>
-                <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-300">{statusMeta.body}</p>
-              </div>
-
-              <div className="min-w-[260px] rounded-[24px] border border-white/8 bg-black/20 p-5">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300/90">진행률</p>
-                  <span className="text-sm font-semibold text-stone-100">{percent}%</span>
-                </div>
-                <ProgressBar percent={live && percent === 0 ? 8 : percent} live={live} />
-                <p className="mt-3 text-sm text-slate-400">
-                  완료 {resolvedCount} / {sections.length || 4}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <StatCard
-              label="매치"
-              value={`${getNumber(overviewRaw, "matchesAnalyzed") || 0}`}
-              hint="최근 분석 대상으로 수집된 경기 수"
-            />
-            <StatCard
-              label="승률"
-              value={snapshot?.overview.raw ? formatPercent(getNumber(overviewRaw, "matchWinRate")) : "-"}
-              hint="전체 분석 표본 기준 매치 승률"
-            />
-            <StatCard
-              label="ACS"
-              value={snapshot?.overview.raw ? getNumber(overviewRaw, "acs").toFixed(1) : "-"}
-              hint="전체 라운드 기준 평균 ACS"
-            />
-            <StatCard
-              label="KDA"
-              value={snapshot?.overview.raw ? formatRatio(getNumber(overviewRaw, "kdaRatio")) : "-"}
-              hint="킬+어시스트 대비 데스 비율"
+        <section className="flex flex-col md:flex-row gap-10 items-stretch">
+          <div className="flex-1 min-w-[320px] max-w-[420px]">
+            <AnalysisForm
+              riotId={riotId}
+              setRiotId={setRiotId}
+              riotTag={riotTag}
+              setRiotTag={setRiotTag}
+              matchCount={matchCount}
+              setMatchCount={setMatchCount}
+              isSubmitting={isSubmitting}
+              error={error}
+              onSubmit={handleSubmit}
             />
           </div>
-
-          <div className="surface-panel rounded-[30px] p-6">
-            <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
-              <div>
-                <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-cyan-300/90">요약</p>
-                <h2 className="font-display text-4xl leading-none text-stone-100">
-                  {snapshot ? `${snapshot.player.riotId}#${snapshot.player.riotTag}` : "활성 스냅샷 없음"}
-                </h2>
-              </div>
-              <span className="rounded-full border border-white/8 bg-white/5 px-4 py-2 text-sm text-slate-300">
-                {snapshot?.player.puuidMasked || "PUUID 대기 중"}
-              </span>
-            </div>
-
+          <div className="flex-1">
             {snapshot ? (
-              <div className="grid gap-4 xl:grid-cols-[1fr_1.3fr]">
-                <div className="rounded-[22px] border border-white/6 bg-black/15 p-5">
-                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-cyan-300">핵심 요약</p>
-                  <ul className="space-y-3 text-sm leading-6 text-slate-300">
-                    {snapshot.overview.facts.map((fact) => (
-                      <li key={fact} className="rounded-2xl border border-white/5 bg-white/4 px-4 py-3">
-                        {fact}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="rounded-[22px] border border-white/6 bg-black/15 p-5">
-                  <p className="mb-4 text-xs font-semibold uppercase tracking-[0.22em] text-rose-300">리뷰어 노트</p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">상태</p>
-                      <p className="mt-2 text-lg font-semibold text-stone-100">{formatJobStatus(snapshot.status)}</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">현재 단계</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">{snapshot.currentStep}</p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">완료</p>
-                      <p className="mt-2 text-lg font-semibold text-stone-100">
-                        {snapshot.progress.completed} / {snapshot.progress.total}
-                      </p>
-                    </div>
-                    <div className="rounded-[18px] border border-white/6 bg-white/4 p-4">
-                      <p className="text-xs uppercase tracking-[0.22em] text-slate-500">현재 항목</p>
-                      <p className="mt-2 text-lg font-semibold text-stone-100">
-                        {snapshot.progress.currentKey ? SECTION_TITLES[snapshot.progress.currentKey] : "없음"}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <OverviewCard
+                statusMeta={statusMeta}
+                percent={percent}
+                live={live}
+                resolvedCount={resolvedCount}
+                sections={sections}
+                overviewRaw={overviewRaw}
+                snapshot={snapshot}
+              />
             ) : (
-              <div className="rounded-[22px] border border-dashed border-white/10 bg-black/15 px-6 py-10 text-center">
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-amber-300">대기</p>
-                <h3 className="mt-3 font-display text-4xl leading-none text-stone-100">RSO 버튼 또는 직접 입력으로 분석을 시작하세요.</h3>
-                <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-slate-400">
-                  현재 프로토타입은 Riot 로그인 골격, 관리자 로그, 상황별 통계 카드, Gemini 행동 피드백 흐름까지 포함합니다.
-                </p>
-              </div>
+              <EmptyState />
             )}
-          </div>
-
-          <div className="grid gap-5">
-            {(snapshot?.sections ?? buildIdleSnapshot(riotId, riotTag).sections).map((section) => (
-              <SectionCard key={section.key} section={section} />
-            ))}
           </div>
         </section>
-      </section>
-    </main>
+
+        {snapshot && (
+          <section className="w-full mt-8">
+            <div className="flex flex-wrap gap-4 mb-8 justify-center">
+              {(Object.keys(SECTION_TITLES) as SectionKey[]).map((key) => {
+                const section = snapshot.sections.find(s => s.key === key);
+                const isActive = activeTab === key;
+                const isCompleted = section?.status === "completed";
+                const isError = section?.status === "error";
+                const isRunning = section?.status === "running";
+
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setActiveTab(key)}
+                    className={`px-6 py-3 text-base font-semibold rounded-2xl shadow transition-all duration-200 border-2 ${
+                      isActive
+                        ? "bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 text-white border-red-500 scale-105 shadow-lg"
+                        : "bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:border-orange-400"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <span>{SECTION_TITLES[key]}</span>
+                      {isCompleted && <div className="w-3 h-3 bg-green-400 rounded-full"></div>}
+                      {isError && <div className="w-3 h-3 bg-red-400 rounded-full"></div>}
+                      {isRunning && <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* 피드백 창을 화면 전체로 확대 */}
+            <div className="w-full">
+              {snapshot.sections
+                .filter(section => section.key === activeTab)
+                .map((section) => (
+                  <SectionCard key={section.key} section={section} />
+                ))}
+            </div>
+          </section>
+        )}
+      </main>
+      <SiteFooter className="relative z-10 border-t border-gray-800/80 bg-black/30" />
+    </div>
   );
 }

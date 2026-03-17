@@ -38,6 +38,7 @@
 
 html {
   color-scheme: dark;
+  scroll-behavior: smooth;
 }
 
 body {
@@ -63,6 +64,23 @@ body::before {
     linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px);
   background-size: 36px 36px;
   mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.7), transparent 80%);
+}
+
+.app-page-shell {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgb(2 6 23), rgb(15 23 42), rgb(2 6 23));
+}
+
+.app-page-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 70, 85, 0.1), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(109, 220, 255, 0.1), transparent 50%),
+    radial-gradient(circle at 40% 40%, rgba(255, 205, 110, 0.05), transparent 50%);
 }
 
 a,
