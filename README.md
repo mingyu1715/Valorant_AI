@@ -76,13 +76,29 @@ cp .env.local.example .env.local
 - `RIOT_RSO_CLIENT_SECRET` (`real` 사용 시)
 - `RIOT_RSO_REDIRECT_URI` (`real` 사용 시)
 
-4. 개발 서버 실행
+4. DB 구축 (최초 1회)
+
+```bash
+# Prisma Client 생성
+npm run db:generate
+
+# 로컬 마이그레이션 파일 생성 + DB 반영
+npm run db:migrate:dev -- --name init
+```
+
+5. 개발 서버 실행
 
 ```bash
 npm run dev
 ```
 
 기본 주소는 `http://localhost:3000` 입니다.
+
+배포 환경(Vercel 등)에서는 빌드 전에 Prisma Client가 자동 생성되며, 배포 시 마이그레이션 반영은 아래 명령어를 사용합니다.
+
+```bash
+npm run db:migrate:deploy
+```
 
 ## Runtime Mode 전환 (개발환경 CLI)
 

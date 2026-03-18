@@ -6,6 +6,7 @@
     "dev": "next dev",
     "dev:mock": "npm run mode:mock && npm run dev",
     "dev:production": "npm run mode:production && npm run dev",
+    "prebuild": "npm run db:generate",
     "build": "next build --webpack",
     "start": "node scripts/start.mjs",
     "security:check": "node scripts/security-check.mjs",
