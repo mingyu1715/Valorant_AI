@@ -2,10 +2,27 @@ import type { NextRequest } from "next/server";
 
 import { getEnv } from "@/src/server/shared";
 
+function isLocalHost(hostname: string): boolean {
+  const normalized = hostname.trim().toLowerCase();
+  return normalized === "localhost" || normalized === "127.0.0.1" || normalized === "::1";
+}
+
+function shouldRejectConfiguredUrl(url: URL): boolean {
+  if (url.protocol !== "http:" && url.protocol !== "https:") {
+    return true;
+  }
+
+  if (process.env.NODE_ENV === "production" && isLocalHost(url.hostname)) {
+    return true;
+  }
+
+  return false;
+}
+
 function toHttpUrl(value: string, request: NextRequest, fallbackPath: string): URL {
   try {
     const url = new URL(value, request.url);
-    if (url.protocol !== "http:" && url.protocol !== "https:") {
+    if (shouldRejectConfiguredUrl(url)) {
       return new URL(fallbackPath, request.url);
     }
     return url;
