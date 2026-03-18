@@ -9,17 +9,21 @@ Riot API와 Gemini를 이용해 최근 VALORANT 경기 데이터를 수집하고
 - TypeScript
 - Tailwind CSS 4
 - Prisma ORM
-- Riot Account API / VAL Match API
+- Riot API
 - Google Gemini API
 
 ## Features
 
 - Riot ID와 Tag 입력 기반 분석 요청
-- 최근 경기 수집 후 4개 세그먼트 분석
-- Gemini 기반 행동 교정 피드백 3개 생성
+- 최근 경기 동기화 후 3개 테마(combat/economy/context) + 최종 종합 분석
+- LLM 분석 응답(헤드라인 + 문단형 요약) 생성
 - Riot RSO mock/real provider 분리 + 내부 세션 발급 골격
+- 헤더에서 로그인 상태 기반으로 `Riot 로그인` / `로그아웃` 버튼 자동 전환
+- 로그인 시 헤더에 현재 Riot 계정(`gameName#tagLine`) 표시
+- 대시보드에서 세션 계정 Riot ID/Tag 자동 반영 및 입력 잠금(session-bound)
 - RiotAccount(puuid) 기반 최근 match 증분 sync 골격 (mock/real client 분리)
 - RawMatch -> Round/Match/Aggregate feature extractor 계층
+- Theme feature payload 기반 LLM 분석 레이어(mock/real Gemini client 분리)
 - 관리자 토큰 기반 운영 로그 콘솔
 - 분석 요청 rate limit 및 민감 로그 마스킹
 
@@ -28,27 +32,18 @@ Riot API와 Gemini를 이용해 최근 VALORANT 경기 데이터를 수집하고
 ```text
 app/
   api/
-    analyze/          분석 작업 생성 및 조회
-    admin/
-      logs/           보호된 운영 로그 API
-      session/        관리자 세션 생성/해제
-    auth/
-      login/          레거시 진입점 (riot/start로 리다이렉트)
-      callback/       레거시 콜백 (riot/callback로 리다이렉트)
-      riot/
-        start/        Riot RSO 시작 (mock/real provider)
-        callback/     Riot RSO 콜백 + 내부 세션 발급
-      logout/         내부 세션 로그아웃
-      session/        현재 로그인 세션 조회
-    matches/
-      sync/           내 경기 증분 동기화
+    [[...route]]/     catch-all route (실제 라우팅은 src/server/api/router.ts)
   dashboard/          분석 대시보드
 components/           대시보드 및 운영 UI
 src/server/           Riot, Gemini, 분석 파이프라인 로직
+src/server/api/router.ts API path -> handler 매핑
+src/server/api/routes/  API route handler 구현
 src/server/auth/      RSO provider, 세션 저장소 추상화, 쿠키 헬퍼
 src/server/db/        Prisma client + repository 골격
 src/server/match-sync/ match sync service + mock/real Riot API client
 src/server/features/  feature extractor + snapshot 저장 service
+src/server/theme-payloads/ theme feature payload 타입/빌더
+src/server/analysis/   prompt builder + mock/real llm client + cache 연동 서비스
 prisma/schema.prisma  DB 스키마
 public/riot.txt       Riot 심사용 공개 파일
 ```
@@ -70,8 +65,10 @@ cp .env.local.example .env.local
 3. 값 입력
 
 - `RIOT_API_KEY`
-- `RIOT_MATCH_API_PROVIDER` (`mock` 또는 `real`, 기본 `mock`)
+- `RIOT_MATCH_API_PROVIDER` (`mock` / `real` / `auto`, 기본 `auto`)
 - `GEMINI_API_KEY`
+- `LLM_ANALYSIS_PROVIDER` (`mock` 또는 `real`, 기본 `mock`)
+- `LLM_ANALYSIS_MODEL` (기본 `gemini-2.5-flash`)
 - `ADMIN_ACCESS_TOKEN`
 - `DATABASE_URL`
 - `RIOT_AUTH_PROVIDER` (`mock` 또는 `real`, 기본 `mock`)
@@ -87,17 +84,65 @@ npm run dev
 
 기본 주소는 `http://localhost:3000` 입니다.
 
+## Runtime Mode 전환 (개발환경 CLI)
+
+사이트 UI가 아니라 `.env.local` 값을 CLI로 전환할 수 있습니다.
+
+```bash
+# mock 모드로 전환 (auth/match/llm=mock, session=memory)
+npm run mode:mock
+
+# production-ready 모드로 전환 (auth/match/llm=real, session=db)
+npm run mode:production
+
+# 현재 모드 값 확인
+npm run mode:status
+```
+
+한 번에 개발 서버까지 실행하려면:
+
+```bash
+npm run dev:mock
+npm run dev:production
+```
+
+## Session UI 동작
+
+- `SiteHeader`는 `/api/auth/session` 응답 기준으로 버튼을 전환합니다.
+- 비로그인 상태: `Riot 로그인` 버튼 표시
+- 로그인 상태: `로그아웃` 버튼 + 현재 계정(`gameName#tagLine`) 표시
+- `Dashboard`는 로그인 세션이 있으면 Riot 계정 입력값을 자동 동기화하고 입력을 잠급니다.
+
+## LLM 샘플 호출 확인
+
+`temp/llm-analysis-input.sample.json` payload를 Gemini로 실제 전송해 결과를 파일로 확인할 수 있습니다.
+
+```bash
+# mock client로 로컬 출력 확인
+npm run test:llm:mock
+
+# real Gemini 호출 (GEMINI_API_KEY 필요)
+npm run test:llm:real
+```
+
+- real 호출 결과 파일: `temp/llm-analysis-output.real.json`
+- 파일에는 theme/final 프롬프트, 요청 payload, raw 응답 텍스트, 파싱된 결과가 함께 저장됩니다.
+
 ## Environment Variables
 
 | Variable | Required | Description |
 | --- | --- | --- |
 | `DATABASE_URL` | DB 사용 시 필수 | Prisma 연결 문자열 |
 | `RIOT_API_KEY` | Yes | Riot API 키 |
-| `RIOT_MATCH_API_PROVIDER` | No | match sync API client 선택 (`mock` / `real`) |
+| `RIOT_MATCH_API_PROVIDER` | No | match sync API client 선택 (`mock` / `real` / `auto`) |
 | `RIOT_MATCH_SYNC_MAX_IDS` | No | 한 번에 동기화할 최대 match id 수 |
 | `RIOT_MATCH_LIST_BASE_URL` | No | Real client용 matchlist base URL |
 | `RIOT_MATCH_DETAIL_BASE_URL` | No | Real client용 match detail base URL |
 | `GEMINI_API_KEY` | Yes | Gemini API 키 |
+| `LLM_ANALYSIS_PROVIDER` | No | LLM 분석 client 선택 (`mock` / `real`) |
+| `LLM_ANALYSIS_MODEL` | No | LLM 분석용 모델명 |
+| `LLM_ANALYSIS_CACHE_TTL_SECONDS` | No | LLM 분석 캐시 TTL(초) |
+| `GEMINI_ANALYSIS_ENDPOINT` | No | LLM 분석용 Gemini base endpoint |
 | `RIOT_ID` | No | 기본 Riot ID |
 | `RIOT_TAG` | No | 기본 Riot Tag |
 | `RIOT_MATCH_COUNT` | No | 분석할 최근 경기 수 |
@@ -130,14 +175,14 @@ npm run dev
 - `/` : 랜딩 페이지
 - `/dashboard` : 분석 대시보드
 - `/admin/logs` : 관리자 로그 콘솔
-- `/api/analyze` : 분석 작업 생성 및 상태 조회
+- `/api/analysis/result` : theme summary 기반 최종 분석 결과 조회/생성
 - `/api/matches/sync` : 내 경기 증분 동기화 실행
+- `/api/features/snapshot` : 세션 puuid 기준 feature snapshot 생성/조회
+- `/api/features/theme-summary` : feature snapshot 기반 theme feature payload 조회
 - `/api/auth/riot/start` : Riot RSO 시작
 - `/api/auth/riot/callback` : Riot RSO 콜백
 - `/api/auth/session` : 내부 로그인 세션 상태 조회
 - `/api/auth/logout` : 내부 로그인 세션 로그아웃
-- `/api/auth/login` : 레거시 로그인 진입점(리다이렉트)
-- `/api/auth/callback` : 레거시 콜백 진입점(리다이렉트)
 
 ## Security Notes
 
@@ -146,14 +191,12 @@ npm run dev
 - 커밋 전 시크릿 검사 스크립트: `npm run security:check`
 - pre-commit 훅 사용 시 1회 설정: `git config core.hooksPath .githooks`
 - 관리자 로그 콘솔은 `ADMIN_ACCESS_TOKEN` 기반 세션 인증이 필요합니다.
-- `/api/analyze`는 IP 기준 rate limit이 적용됩니다.
 - 로그에 기록되는 API 키, 쿠키, 토큰은 마스킹됩니다.
 - 응답 헤더에 `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`를 설정합니다.
 
 ## Current Limitations
 
 - `RIOT_AUTH_PROVIDER=real`일 때는 콜백 토큰 교환/사용자 식별 로직이 아직 TODO 상태입니다.
-- `RIOT_MATCH_API_PROVIDER=real`일 때 Riot match list/detail 호출은 아직 TODO 상태입니다.
 - 실 Riot raw 응답의 round 상세 필드 매핑(`src/server/features/extractor.ts`)은 TODO가 남아 있습니다.
 - `AUTH_SESSION_STORE=db`는 세션 스토어 연결부가 아직 TODO 상태이며, 현재 기본은 `memory`입니다.
 - 타입 체크는 `typescript` 설치 후 `npx tsc -p tsconfig.json --noEmit`로 검증할 수 있습니다.
@@ -176,12 +219,18 @@ npm run dev
 ## Match Sync 3단계에서 직접 해야 하는 작업
 
 1. DB 마이그레이션이 적용된 상태에서 `RiotAccount` 레코드가 생성되도록 로그인(mock 또는 real)을 먼저 수행합니다.
-1. `.env.local`에서 `RIOT_MATCH_API_PROVIDER=mock`으로 `/api/matches/sync`를 먼저 검증합니다.
-1. real 연동 시 `RIOT_MATCH_API_PROVIDER=real`로 바꾸기 전에 `src/server/match-sync/real-client.ts`의 TODO(match list/detail API 호출)를 구현합니다.
-1. real 연동 시 `RIOT_API_KEY`와 필요한 endpoint env(`RIOT_MATCH_LIST_BASE_URL`, `RIOT_MATCH_DETAIL_BASE_URL`)를 실제 운영값으로 확인합니다.
+1. `.env.local`에 `RIOT_API_KEY`를 넣고 `RIOT_MATCH_API_PROVIDER=auto`(또는 `real`)로 `/api/matches/sync`를 검증합니다.
+1. Riot API 호출이 차단되면 키 권한(VAL Match 접근 권한/만료)과 rate limit(429)을 먼저 확인합니다.
+1. 리전/프록시 환경이 있으면 `RIOT_MATCH_LIST_BASE_URL`, `RIOT_MATCH_DETAIL_BASE_URL`를 운영값으로 조정합니다.
 
 ## Feature 4단계에서 직접 확인해야 하는 작업
 
 1. `src/server/features/extractor.ts`의 `TODO(riot-mapping)` 구간에서 Riot 실제 raw round 필드를 `side/won/economyTier/weaponGroup`으로 매핑합니다.
 1. 운영 데이터로 `extractAndSaveFeaturesForPlayerFromDb()`를 호출해 `PlayerFeatureSnapshot` 저장 결과를 검증합니다.
 1. 샘플 수 기준(confidence target sample)을 운영 기준에 맞게 조정합니다.
+
+## Gemini 6단계에서 직접 해야 하는 작업
+
+1. `.env.local`에 `GEMINI_API_KEY`, `LLM_ANALYSIS_PROVIDER`, `LLM_ANALYSIS_MODEL` 값을 운영 기준으로 입력합니다.
+1. real 연동 시 `GEMINI_ANALYSIS_ENDPOINT`, `GEMINI_TIMEOUT_SECONDS`, `LLM_ANALYSIS_MODEL`을 운영 기준으로 조정합니다.
+1. 배포 전 캐시 정책을 운영 기준으로 확정하고 `LLM_ANALYSIS_CACHE_TTL_SECONDS`를 조정합니다.

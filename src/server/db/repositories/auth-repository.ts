@@ -231,6 +231,7 @@ export class AuthRepository {
 
     return {
       sessionId: sessionToken,
+      userId: session.userId,
       puuid: session.riotAccount.puuid,
       gameName: session.riotAccount.gameName,
       tagLine: session.riotAccount.tagLine,

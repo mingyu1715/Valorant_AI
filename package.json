@@ -4,9 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:mock": "npm run mode:mock && npm run dev",
+    "dev:production": "npm run mode:production && npm run dev",
     "build": "next build --webpack",
     "start": "node scripts/start.mjs",
     "security:check": "node scripts/security-check.mjs",
+    "mode:mock": "node scripts/runtime-mode.mjs mock",
+    "mode:production": "node scripts/runtime-mode.mjs production",
+    "mode:status": "node scripts/runtime-mode.mjs status",
+    "test:llm:mock": "node --no-warnings scripts/test-llm-sample.mjs",
+    "test:llm:real": "node --no-warnings scripts/test-llm-real.mjs",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy"

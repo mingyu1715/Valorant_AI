@@ -58,8 +58,6 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
   const [testStatus, setTestStatus] = useState("운영 테스트 실행 대기");
   const [testResult, setTestResult] = useState<ApiTestResult | null>(null);
   const [isRunningTest, setIsRunningTest] = useState(false);
-  const [testRiotId, setTestRiotId] = useState("");
-  const [testRiotTag, setTestRiotTag] = useState("");
   const [token, setToken] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -186,34 +184,21 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
     });
   }
 
-  async function handleTestAnalyzeCreate() {
-    const riotId = testRiotId.trim();
-    const riotTag = testRiotTag.trim();
-    if (!riotId || !riotTag) {
-      setTestStatus("분석 요청 테스트를 위해 Riot ID와 태그를 입력해 주세요.");
-      return;
-    }
-
-    await runApiTest("분석 작업 생성", "/api/analyze", {
+  async function handleTestAnalysisGenerate() {
+    await runApiTest("분석 결과 생성", "/api/analysis/result", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        riotId,
-        riotTag
+        limit: 10,
+        useCache: false
       })
     });
   }
 
-  async function handleTestAnalyzeError() {
-    await runApiTest("분석 오류 테스트", "/api/analyze?error=true", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({})
-    });
+  async function handleTestAnalysisFetch() {
+    await runApiTest("분석 결과 조회", "/api/analysis/result?limit=10&useCache=true");
   }
 
   useEffect(() => {
@@ -361,29 +346,6 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
           </div>
 
           <div className="grid gap-4 rounded-[24px] border border-white/8 bg-black/20 p-5">
-            <div className="grid gap-3 md:grid-cols-2">
-              <label className="block">
-                <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-slate-400">Riot ID</span>
-                <input
-                  value={testRiotId}
-                  onChange={(event) => setTestRiotId(event.target.value)}
-                  className="w-full rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-sm text-stone-100 outline-none placeholder:text-slate-500 focus:border-red-400/50 focus:bg-red-400/10"
-                  placeholder="예: PlayerName"
-                  autoComplete="off"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-slate-400">Riot Tag</span>
-                <input
-                  value={testRiotTag}
-                  onChange={(event) => setTestRiotTag(event.target.value)}
-                  className="w-full rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-sm text-stone-100 outline-none placeholder:text-slate-500 focus:border-red-400/50 focus:bg-red-400/10"
-                  placeholder="예: KR1"
-                  autoComplete="off"
-                />
-              </label>
-            </div>
-
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
@@ -403,19 +365,19 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
               </button>
               <button
                 type="button"
-                onClick={() => void handleTestAnalyzeCreate()}
+                onClick={() => void handleTestAnalysisGenerate()}
                 disabled={isRunningTest}
                 className="inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-r from-red-600 to-red-500 px-4 text-xs font-semibold uppercase tracking-[0.16em] text-white disabled:cursor-not-allowed disabled:opacity-60"
               >
-                분석 작업 생성
+                분석 결과 생성
               </button>
               <button
                 type="button"
-                onClick={() => void handleTestAnalyzeError()}
+                onClick={() => void handleTestAnalysisFetch()}
                 disabled={isRunningTest}
                 className="inline-flex min-h-11 items-center justify-center rounded-full border border-orange-500/50 bg-orange-500/10 px-4 text-xs font-semibold uppercase tracking-[0.16em] text-orange-200 hover:bg-orange-500/20 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                분석 오류 테스트
+                분석 결과 조회
               </button>
             </div>
 

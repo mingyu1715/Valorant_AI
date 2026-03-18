@@ -56,6 +56,14 @@ async function resolveSyncTarget(input: SyncRecentMatchesInput): Promise<SyncTar
     : await authRepository.findRiotAccountByUserId(userId || "");
 
   if (!account) {
+    if (puuid) {
+      // AUTH_SESSION_STORE=memory 환경에서는 RiotAccount가 없을 수 있으므로 세션 puuid로 fallback 합니다.
+      logDev(`[match-sync] RiotAccount 미존재로 session puuid fallback 사용 puuid=${puuid}`);
+      return {
+        userId: "session",
+        puuid
+      };
+    }
     throw new AppError("동기화 대상 RiotAccount를 찾을 수 없습니다.");
   }
 
@@ -67,8 +75,8 @@ async function resolveSyncTarget(input: SyncRecentMatchesInput): Promise<SyncTar
 
 function buildRawMatchPayload(params: {
   puuid: string;
-  listItem: RiotMatchListItem;
-  detail: RiotMatchDetailPayload;
+  matchListItem: RiotMatchListItem;
+  matchDetail: RiotMatchDetailPayload;
   clientKind: RiotMatchApiClient["kind"];
 }): Prisma.InputJsonValue {
   return toPrismaJsonValue({
@@ -80,18 +88,18 @@ function buildRawMatchPayload(params: {
     },
     identity: {
       puuid: params.puuid,
-      matchId: params.detail.matchId
+      matchId: params.matchDetail.matchId
     },
     summary: {
-      gameStartAt: params.detail.gameStartAt ?? params.listItem.gameStartAt ?? null,
-      queueId: params.detail.queueId ?? params.listItem.queueId ?? null,
-      gameMode: params.detail.gameMode ?? params.listItem.gameMode ?? null,
-      region: params.detail.region ?? params.listItem.region ?? null
+      gameStartAt: params.matchDetail.gameStartAt ?? params.matchListItem.gameStartAt ?? null,
+      queueId: params.matchDetail.queueId ?? params.matchListItem.queueId ?? null,
+      gameMode: params.matchDetail.gameMode ?? params.matchListItem.gameMode ?? null,
+      region: params.matchDetail.region ?? params.matchListItem.region ?? null
     },
-    listPayload: params.listItem.raw ?? {
-      matchId: params.listItem.matchId
+    listPayload: params.matchListItem.raw ?? {
+      matchId: params.matchListItem.matchId
     },
-    matchPayload: params.detail.raw
+    matchPayload: params.matchDetail.raw
   });
 }
 
@@ -104,35 +112,35 @@ export async function syncRecentMatchesForUser(
 
   logDev(`[match-sync] 시작 userId=${target.userId} puuid=${target.puuid} provider=${client.kind}`);
 
-  const list = await client.getMatchListByPuuid(target.puuid);
-  const uniqueList = [...new Map(list.map((item) => [item.matchId.trim(), item] as const)).values()]
-    .filter((item) => item.matchId.trim())
+  const matchListItems = await client.getMatchListByPuuid(target.puuid);
+  const deduplicatedMatchItems = [...new Map(matchListItems.map((matchItem) => [matchItem.matchId.trim(), matchItem] as const)).values()]
+    .filter((matchItem) => matchItem.matchId.trim())
     .slice(0, maxIds);
 
-  const fetchedMatchIds = uniqueList.map((item) => item.matchId.trim());
+  const fetchedMatchIds = deduplicatedMatchItems.map((matchItem) => matchItem.matchId.trim());
   const existingMatchIds = await analysisRepository.findExistingMatchIds(fetchedMatchIds);
   const skippedMatchIds = fetchedMatchIds.filter((id) => existingMatchIds.has(id));
-  const pendingItems = uniqueList.filter((item) => !existingMatchIds.has(item.matchId.trim()));
+  const pendingMatchItems = deduplicatedMatchItems.filter((matchItem) => !existingMatchIds.has(matchItem.matchId.trim()));
 
   const insertedMatchIds: string[] = [];
   const failedMatches: MatchSyncFailureItem[] = [];
 
-  for (const item of pendingItems) {
-    const matchId = item.matchId.trim();
+  for (const matchItem of pendingMatchItems) {
+    const matchId = matchItem.matchId.trim();
 
     try {
-      const detail = await client.getMatchById(matchId);
+      const matchDetail = await client.getMatchById(matchId);
       await analysisRepository.upsertRawMatch({
         matchId,
         puuid: target.puuid,
-        gameStartAt: toDateOrNull(detail.gameStartAt ?? item.gameStartAt),
-        queueId: detail.queueId ?? item.queueId ?? null,
-        gameMode: detail.gameMode ?? item.gameMode ?? null,
-        region: detail.region ?? item.region ?? null,
+        gameStartAt: toDateOrNull(matchDetail.gameStartAt ?? matchItem.gameStartAt),
+        queueId: matchDetail.queueId ?? matchItem.queueId ?? null,
+        gameMode: matchDetail.gameMode ?? matchItem.gameMode ?? null,
+        region: matchDetail.region ?? matchItem.region ?? null,
         rawJson: buildRawMatchPayload({
           puuid: target.puuid,
-          listItem: item,
-          detail,
+          matchListItem: matchItem,
+          matchDetail,
           clientKind: client.kind
         })
       });
@@ -151,7 +159,7 @@ export async function syncRecentMatchesForUser(
     }
   }
 
-  const result: MatchSyncResult = {
+  const syncResult: MatchSyncResult = {
     userId: target.userId,
     puuid: target.puuid,
     provider: client.kind,
@@ -165,6 +173,6 @@ export async function syncRecentMatchesForUser(
     failedMatches
   };
 
-  logDev(`[match-sync] 완료 ${JSON.stringify(sanitizeLogValue(result))}`);
-  return result;
+  logDev(`[match-sync] 완료 ${JSON.stringify(sanitizeLogValue(syncResult))}`);
+  return syncResult;
 }

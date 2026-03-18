@@ -40,6 +40,7 @@ export function getAuthSessionCookieOptions() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
+    priority: "high" as const,
     maxAge: getSessionTtlSeconds()
   };
 }
@@ -50,6 +51,7 @@ export function getAuthFlowCookieOptions() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax" as const,
     path: "/",
+    priority: "high" as const,
     maxAge: getFlowTtlSeconds()
   };
 }
@@ -89,6 +91,10 @@ export function parseAuthFlowState(rawValue?: string): RiotAuthFlowState | null 
   } catch {
     return null;
   }
+}
+
+export function isAuthFlowStateExpired(flow: RiotAuthFlowState, now = Date.now()): boolean {
+  return flow.createdAt + getFlowTtlSeconds() * 1000 < now;
 }
 
 export function readAuthSessionId(cookies: CookieReader): string | null {

@@ -8,7 +8,7 @@ export default function HomePage() {
   return (
     <div className="app-page-shell">
       <div className="app-page-bg" />
-      <SiteHeader />
+      <SiteHeader hideDashboardLink />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden px-6 py-24 sm:px-8 lg:px-12">
@@ -39,7 +39,7 @@ export default function HomePage() {
               당신의 플레이 스타일을 분석하고, 프로급 전략을 제시합니다.
             </p>
 
-            <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6">
+            <div className="mt-12 flex items-center justify-center">
               <Link
                 href="/api/auth/riot/start"
                 className="group relative inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-red-500/25 transition-all duration-200 hover:shadow-red-500/40 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
@@ -48,16 +48,6 @@ export default function HomePage() {
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clipRule="evenodd" />
                 </svg>
                 Riot 계정으로 시작하기
-              </Link>
-
-              <Link
-                href="/dashboard"
-                className="group inline-flex items-center justify-center rounded-xl border border-gray-600 bg-gray-800/50 px-8 py-4 text-lg font-semibold text-gray-300 backdrop-blur-sm transition-all duration-200 hover:bg-gray-700/50 hover:border-gray-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 focus:ring-offset-slate-900"
-              >
-                데모 대시보드 체험
-                <svg className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
               </Link>
             </div>
           </div>

@@ -74,5 +74,9 @@ export function getConfiguredAuthSessionStoreKind(): AuthSessionStoreKind {
 }
 
 export function getAuthSessionStore(): AuthSessionStore {
-  return getConfiguredAuthSessionStoreKind() === "db" ? dbStore : inMemoryStore;
+  const storeKind = getConfiguredAuthSessionStoreKind();
+  if (process.env.NODE_ENV === "production" && storeKind === "memory") {
+    throw new AppError("production 환경에서는 AUTH_SESSION_STORE=db만 허용됩니다.");
+  }
+  return storeKind === "db" ? dbStore : inMemoryStore;
 }

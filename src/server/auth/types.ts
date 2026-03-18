@@ -28,6 +28,7 @@ export interface RiotAuthProvider {
 
 export interface AuthSessionRecord {
   sessionId: string;
+  userId?: string;
   puuid: string;
   gameName: string;
   tagLine: string;

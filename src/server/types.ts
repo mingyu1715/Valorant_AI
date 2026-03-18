@@ -26,10 +26,22 @@ export interface OverviewPayload {
   raw: OverviewRaw;
 }
 
+export interface FinalSummaryPayload {
+  headline: string;
+  analysisParagraph: string;
+  playstyle?: string;
+  coreStrength?: string;
+  coreWeakness?: string;
+  priorityFocus?: string[];
+}
+
 export interface SectionAnalysis {
   headline: string;
   summary: string;
   actions: string[];
+  strengths?: string[];
+  weaknesses?: string[];
+  priorityDirections?: string[];
 }
 
 export interface SectionPayload {
@@ -47,6 +59,7 @@ export interface JobSectionPayload extends SectionPayload {
 
 export interface AnalysisSnapshot {
   jobId: string;
+  ownerPuuid?: string;
   status: JobStatus;
   currentStep: string;
   player: PlayerPayload;
@@ -59,6 +72,7 @@ export interface AnalysisSnapshot {
     total: number;
     currentKey: SectionKey | null;
   };
+  finalSummary?: FinalSummaryPayload | null;
   sections: JobSectionPayload[];
   error: string | null;
   createdAt: number;

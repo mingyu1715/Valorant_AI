@@ -205,6 +205,7 @@ export function getAdminSessionCookieOptions() {
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict" as const,
     path: "/",
+    priority: "high" as const,
     maxAge: 60 * 60 * 8
   };
 }

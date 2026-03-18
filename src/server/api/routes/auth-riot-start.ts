@@ -15,10 +15,10 @@ function redirectToDashboardWithState(request: NextRequest, authState: string): 
 }
 
 export async function GET(request: NextRequest) {
-  const provider = getRiotAuthProvider();
   const state = randomUUID();
 
   try {
+    const provider = getRiotAuthProvider();
     const callbackUrl = getRiotAuthCallbackUrl(request);
     const authorizationUrl = await provider.createAuthorizationUrl({
       state,
@@ -38,6 +38,9 @@ export async function GET(request: NextRequest) {
     );
     return response;
   } catch (error) {
+    if (error instanceof AppError && error.message.includes("production 환경에서는")) {
+      return redirectToDashboardWithState(request, "mock_not_allowed_in_production");
+    }
     return redirectToDashboardWithState(request, error instanceof AppError ? "missing_rso_config" : "auth_start_failed");
   }
 }
