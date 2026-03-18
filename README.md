@@ -172,3 +172,16 @@ npm run dev
 1. Prisma Client를 생성합니다: `npm run db:generate`
 1. 마이그레이션 파일을 생성/적용합니다: `npm run db:migrate:dev -- --name init`
 1. 배포 환경에서는 마이그레이션 적용만 실행합니다: `npm run db:migrate:deploy`
+
+## Match Sync 3단계에서 직접 해야 하는 작업
+
+1. DB 마이그레이션이 적용된 상태에서 `RiotAccount` 레코드가 생성되도록 로그인(mock 또는 real)을 먼저 수행합니다.
+1. `.env.local`에서 `RIOT_MATCH_API_PROVIDER=mock`으로 `/api/matches/sync`를 먼저 검증합니다.
+1. real 연동 시 `RIOT_MATCH_API_PROVIDER=real`로 바꾸기 전에 `src/server/match-sync/real-client.ts`의 TODO(match list/detail API 호출)를 구현합니다.
+1. real 연동 시 `RIOT_API_KEY`와 필요한 endpoint env(`RIOT_MATCH_LIST_BASE_URL`, `RIOT_MATCH_DETAIL_BASE_URL`)를 실제 운영값으로 확인합니다.
+
+## Feature 4단계에서 직접 확인해야 하는 작업
+
+1. `src/server/features/extractor.ts`의 `TODO(riot-mapping)` 구간에서 Riot 실제 raw round 필드를 `side/won/economyTier/weaponGroup`으로 매핑합니다.
+1. 운영 데이터로 `extractAndSaveFeaturesForPlayerFromDb()`를 호출해 `PlayerFeatureSnapshot` 저장 결과를 검증합니다.
+1. 샘플 수 기준(confidence target sample)을 운영 기준에 맞게 조정합니다.
