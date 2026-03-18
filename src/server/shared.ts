@@ -56,7 +56,10 @@ const SENSITIVE_LOG_KEYS = new Set([
   "riot_api_key",
   "gemini_api_key",
   "admin_access_token",
-  "riot_rso_state"
+  "riot_rso_state",
+  "riot_rso_client_secret",
+  "valorant_auth_session",
+  "valorant_riot_auth_flow"
 ]);
 
 export class AppError extends Error {

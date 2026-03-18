@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { createAnalysisJob, getJobSnapshot } from "@/src/server/jobs";
+import { getAuthSessionFromRequest } from "@/src/server/auth/session";
 import {
   AppError,
   DEFAULT_ANALYZE_RATE_LIMIT_MAX,
@@ -34,6 +35,11 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  // 테스트용: ?error=true로 에러 페이지 테스트
+  if (request.nextUrl.searchParams.get("error") === "true") {
+    throw new Error("테스트 에러: 에러 페이지 표시를 위한 의도적인 오류입니다.");
+  }
+
   let requestBody: Record<string, unknown> = {};
 
   try {
@@ -57,10 +63,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    requestBody = (await request.json()) as Record<string, unknown>;
-    const riotId = String(requestBody.riotId ?? "").trim();
-    const riotTag = String(requestBody.riotTag ?? "").trim();
-    const snapshot = createAnalysisJob(riotId, riotTag);
+    try {
+      requestBody = (await request.json()) as Record<string, unknown>;
+    } catch {
+      requestBody = {};
+    }
+    const bodyRiotId = String(requestBody.riotId ?? "").trim();
+    const bodyRiotTag = String(requestBody.riotTag ?? "").trim();
+    const session = await getAuthSessionFromRequest(request);
+    const effectiveRiotId = bodyRiotId || session?.gameName;
+    const effectiveRiotTag = bodyRiotTag || session?.tagLine;
+    // TODO(phase-2): createAnalysisJob이 puuid를 직접 받도록 확장해 본인 계정 분석을 강제합니다.
+    const snapshot = createAnalysisJob(effectiveRiotId, effectiveRiotTag);
     return NextResponse.json(snapshot, {
       status: 202,
       headers: {

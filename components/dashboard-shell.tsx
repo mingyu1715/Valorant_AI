@@ -12,6 +12,17 @@ type DashboardShellProps = {
   authState?: string;
 };
 
+type AuthSessionPayload = {
+  authenticated: boolean;
+  session: {
+    puuid: string;
+    gameName: string;
+    tagLine: string;
+    provider: "mock" | "real";
+    expiresAt: number;
+  } | null;
+};
+
 const SECTION_TITLES: Record<SectionKey, string> = {
   attack_defense: "공수 진영 분석",
   economy: "자금 및 경제",
@@ -406,6 +417,12 @@ function AnalysisForm({
 }) {
   const [hasTagDelimiter, setHasTagDelimiter] = useState(riotTag.length > 0);
 
+  useEffect(() => {
+    if (riotTag.length > 0) {
+      setHasTagDelimiter(true);
+    }
+  }, [riotTag]);
+
   const handleRiotIdChange = (value: string) => {
     if (value.includes("#")) {
       const idx = value.indexOf("#");
@@ -612,15 +629,45 @@ function AuthBanner({ authState }: { authState?: string }) {
   }
 
   const copyMap: Record<string, { title: string; body: string; tone: string }> = {
+    login_success: {
+      title: "로그인이 완료되었습니다.",
+      body: "내부 세션 쿠키가 발급되었습니다. 현재 단계는 Mock RSO 기본값이며, 이후 Real RSO로 교체 가능합니다.",
+      tone: "badge-success"
+    },
+    logout_success: {
+      title: "로그아웃되었습니다.",
+      body: "내부 세션이 제거되었습니다.",
+      tone: "badge-info"
+    },
     missing_rso_config: {
       title: "RSO 설정이 비어 있습니다.",
-      body: "RIOT_RSO_CLIENT_ID와 RIOT_RSO_REDIRECT_URI를 .env.local에 채워야 로그인 버튼이 실제로 동작합니다.",
+      body: "Real RSO를 쓰려면 RIOT_RSO_CLIENT_ID, RIOT_RSO_CLIENT_SECRET, RIOT_RSO_REDIRECT_URI를 .env.local에 채워야 합니다.",
       tone: "badge-warning"
     },
-    code_received: {
-      title: "OAuth 콜백 코드 수신",
-      body: "인가 코드는 수신됐고, 토큰 교환 단계는 프로덕션 승인 후 연결할 수 있도록 뼈대만 준비해 두었습니다.",
-      tone: "badge-success"
+    real_provider_not_ready: {
+      title: "Real RSO 콜백은 아직 미구현입니다.",
+      body: "1단계에서는 mock provider가 기본이며, 실서비스 토큰 교환은 다음 단계에서 연결해야 합니다.",
+      tone: "badge-warning"
+    },
+    missing_state: {
+      title: "OAuth state가 없습니다.",
+      body: "보안 검증을 위해 state는 필수입니다. 로그인 흐름을 다시 시작해 주세요.",
+      tone: "badge-error"
+    },
+    missing_code: {
+      title: "OAuth code가 없습니다.",
+      body: "인가 코드가 누락되어 세션을 발급할 수 없습니다.",
+      tone: "badge-error"
+    },
+    auth_start_failed: {
+      title: "로그인 시작에 실패했습니다.",
+      body: "인증 제공자 URL 생성 중 오류가 발생했습니다.",
+      tone: "badge-error"
+    },
+    auth_callback_failed: {
+      title: "로그인 완료 처리에 실패했습니다.",
+      body: "콜백 처리 중 내부 오류가 발생했습니다.",
+      tone: "badge-error"
     },
     state_mismatch: {
       title: "OAuth state 검증 실패",
@@ -717,7 +764,34 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState }: Das
     }
   }
 
-  useEffect(() => () => stopPolling(), []);
+  useEffect(() => {
+    let isMounted = true;
+
+    async function hydrateRiotIdentityFromSession() {
+      try {
+        const response = await fetch("/api/auth/session", { cache: "no-store" });
+        if (!response.ok) {
+          return;
+        }
+
+        const payload = (await response.json()) as AuthSessionPayload;
+        if (!isMounted || !payload.authenticated || !payload.session) {
+          return;
+        }
+
+        setRiotId((current) => current || payload.session?.gameName || "");
+        setRiotTag((current) => current || payload.session?.tagLine || "");
+      } catch {
+        // 세션 조회 실패 시 수동 입력 흐름으로 그대로 진행
+      }
+    }
+
+    void hydrateRiotIdentityFromSession();
+    return () => {
+      isMounted = false;
+      stopPolling();
+    };
+  }, []);
 
   const sections = snapshot?.sections ?? [];
   const resolvedCount = sections.filter((section) => section.status === "completed" || section.status === "error").length;

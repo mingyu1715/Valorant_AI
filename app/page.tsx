@@ -41,7 +41,7 @@ export default function HomePage() {
 
             <div className="mt-12 flex flex-col sm:flex-row items-center justify-center gap-6">
               <Link
-                href="/api/auth/login"
+                href="/api/auth/riot/start"
                 className="group relative inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-red-500/25 transition-all duration-200 hover:shadow-red-500/40 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 focus:ring-offset-slate-900"
               >
                 <svg className="mr-3 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
@@ -169,7 +169,7 @@ export default function HomePage() {
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/api/auth/login"
+                href="/api/auth/riot/start"
                 className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-500 px-8 py-4 text-lg font-semibold text-white shadow-2xl shadow-red-500/25 transition-all duration-200 hover:shadow-red-500/40 hover:scale-105"
               >
                 무료로 시작하기

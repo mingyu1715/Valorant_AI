@@ -42,10 +42,16 @@ export function SiteHeader({ className = "" }: SiteHeaderProps) {
             ))}
           </nav>
           <Link
-            href="/api/auth/login"
+            href="/api/auth/riot/start"
             className="inline-flex min-h-9 items-center justify-center rounded-md bg-red-600 px-3 text-xs font-semibold text-white hover:bg-red-500 sm:text-sm"
           >
             Riot 로그인
+          </Link>
+          <Link
+            href="/api/auth/logout"
+            className="inline-flex min-h-9 items-center justify-center rounded-md border border-white/20 bg-white/5 px-3 text-xs font-semibold text-slate-100 hover:bg-white/10 sm:text-sm"
+          >
+            로그아웃
           </Link>
         </div>
       </div>
