@@ -5,10 +5,15 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
-    "start": "node scripts/start.mjs"
+    "start": "node scripts/start.mjs",
+    "db:generate": "prisma generate",
+    "db:migrate:dev": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy"
   },
   "dependencies": {
+    "@prisma/client": "^7.5.0",
     "next": "16.1.6",
+    "prisma": "^7.5.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

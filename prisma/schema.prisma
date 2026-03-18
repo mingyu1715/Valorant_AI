@@ -1,0 +1,140 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  displayName String?
+
+  riotAccounts RiotAccount[]
+  sessions     Session[]
+
+  @@map("users")
+}
+
+model RiotAccount {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  puuid    String @unique
+  gameName String
+  tagLine  String
+  region   String?
+  provider String @default("riot-rso")
+
+  accessTokenEncrypted  String?
+  refreshTokenEncrypted String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  tokenMetadataJson     Json?
+
+  lastLoginAt DateTime?
+
+  sessions Session[]
+
+  @@index([userId])
+  @@index([gameName, tagLine])
+  @@map("riot_accounts")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  riotAccountId String?
+  riotAccount   RiotAccount? @relation(fields: [riotAccountId], references: [id], onDelete: SetNull)
+
+  sessionTokenHash String   @unique
+  expiresAt        DateTime
+  revokedAt        DateTime?
+
+  ipAddress    String?
+  userAgent    String?
+  metadataJson Json?
+
+  @@index([userId, expiresAt])
+  @@index([riotAccountId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RawMatch {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  matchId String @unique
+  puuid   String
+
+  gameStartAt DateTime?
+  queueId     String?
+  gameMode    String?
+  region      String?
+
+  rawJson Json
+
+  @@index([puuid, createdAt])
+  @@map("raw_matches")
+}
+
+model PlayerFeatureSnapshot {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  puuid   String
+  window  String
+  version String
+
+  featureJson        Json
+  sourceMatchIdsJson Json?
+  metadataJson       Json?
+
+  generatedAt DateTime @default(now())
+
+  @@unique([puuid, window, version], map: "player_feature_snapshot_unique")
+  @@index([puuid, generatedAt])
+  @@map("player_feature_snapshots")
+}
+
+model AnalysisCache {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cacheKey String @unique
+
+  puuid   String?
+  window  String?
+  version String?
+  model   String?
+
+  promptHash String?
+
+  inputJson    Json
+  outputJson   Json
+  metadataJson Json?
+
+  expiresAt    DateTime?
+  lastAccessAt DateTime?
+  hitCount     Int       @default(0)
+
+  @@index([puuid, expiresAt])
+  @@map("analysis_caches")
+}

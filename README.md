@@ -8,6 +8,7 @@ Riot API와 Gemini를 이용해 최근 VALORANT 경기 데이터를 수집하고
 - React 19
 - TypeScript
 - Tailwind CSS 4
+- Prisma ORM
 - Riot Account API / VAL Match API
 - Google Gemini API
 
@@ -41,6 +42,8 @@ app/
 components/           대시보드 및 운영 UI
 src/server/           Riot, Gemini, 분석 파이프라인 로직
 src/server/auth/      RSO provider, 세션 저장소 추상화, 쿠키 헬퍼
+src/server/db/        Prisma client + repository 골격
+prisma/schema.prisma  DB 스키마
 public/riot.txt       Riot 심사용 공개 파일
 ```
 
@@ -63,6 +66,7 @@ cp .env.local.example .env.local
 - `RIOT_API_KEY`
 - `GEMINI_API_KEY`
 - `ADMIN_ACCESS_TOKEN`
+- `DATABASE_URL`
 - `RIOT_AUTH_PROVIDER` (`mock` 또는 `real`, 기본 `mock`)
 - `RIOT_RSO_CLIENT_ID` (`real` 사용 시)
 - `RIOT_RSO_CLIENT_SECRET` (`real` 사용 시)
@@ -80,6 +84,7 @@ npm run dev
 
 | Variable | Required | Description |
 | --- | --- | --- |
+| `DATABASE_URL` | DB 사용 시 필수 | Prisma 연결 문자열 |
 | `RIOT_API_KEY` | Yes | Riot API 키 |
 | `GEMINI_API_KEY` | Yes | Gemini API 키 |
 | `RIOT_ID` | No | 기본 Riot ID |
@@ -133,7 +138,7 @@ npm run dev
 ## Current Limitations
 
 - `RIOT_AUTH_PROVIDER=real`일 때는 콜백 토큰 교환/사용자 식별 로직이 아직 TODO 상태입니다.
-- `AUTH_SESSION_STORE=db`는 어댑터 인터페이스만 준비되어 있으며 실제 DB 쿼리는 아직 구현되지 않았습니다.
+- `AUTH_SESSION_STORE=db`는 세션 스토어 연결부가 아직 TODO 상태이며, 현재 기본은 `memory`입니다.
 - 타입 체크는 `typescript` 설치 후 `npx tsc -p tsconfig.json --noEmit`로 검증할 수 있습니다.
 
 ## Riot RSO 1단계 이후 직접 해야 하는 작업
@@ -142,3 +147,10 @@ npm run dev
 1. `.env.local`에 `RIOT_RSO_CLIENT_ID`, `RIOT_RSO_CLIENT_SECRET`, `RIOT_RSO_REDIRECT_URI`를 실제 값으로 입력합니다.
 1. `RIOT_AUTH_PROVIDER=real`로 변경하기 전에 `src/server/auth/real-provider.ts`의 TODO(code->token->userinfo/puuid 매핑)를 구현합니다.
 1. DB 준비 후 `src/server/auth/session-store.ts`의 `DbAuthSessionStore` TODO(create/get/delete)를 실제 DB adapter로 교체하고 `AUTH_SESSION_STORE=db`로 전환합니다.
+
+## DB 2단계에서 직접 해야 하는 작업
+
+1. `.env.local`에 실제 `DATABASE_URL`을 입력합니다.
+1. Prisma Client를 생성합니다: `npm run db:generate`
+1. 마이그레이션 파일을 생성/적용합니다: `npm run db:migrate:dev -- --name init`
+1. 배포 환경에서는 마이그레이션 적용만 실행합니다: `npm run db:migrate:deploy`

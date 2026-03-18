@@ -1,5 +1,6 @@
 import { AppError, getEnv } from "@/src/server/shared";
 import type { AuthSessionRecord, AuthSessionStore } from "@/src/server/auth/types";
+import { authRepository } from "@/src/server/db/repositories";
 
 type AuthSessionStoreKind = "memory" | "db";
 
@@ -32,21 +33,33 @@ class InMemoryAuthSessionStore implements AuthSessionStore {
 
 class DbAuthSessionStore implements AuthSessionStore {
   async create(record: AuthSessionRecord): Promise<void> {
-    void record;
-    // TODO(phase-2): DB 세션 테이블 insert 구현
-    throw new AppError("DB 세션 저장소는 아직 연결되지 않았습니다. AUTH_SESSION_STORE=memory를 사용해 주세요.");
+    try {
+      await authRepository.createSessionFromAuthRecord({
+        authSession: record
+      });
+    } catch {
+      throw new AppError("DB 세션 저장에 실패했습니다. DATABASE_URL과 Prisma 마이그레이션 상태를 확인해 주세요.");
+    }
   }
 
   async getById(sessionId: string): Promise<AuthSessionRecord | null> {
-    void sessionId;
-    // TODO(phase-2): DB 세션 테이블 select 구현
-    throw new AppError("DB 세션 저장소는 아직 연결되지 않았습니다. AUTH_SESSION_STORE=memory를 사용해 주세요.");
+    try {
+      const session = await authRepository.findActiveSessionByToken(sessionId);
+      if (!session) {
+        return null;
+      }
+      return authRepository.toAuthSessionRecord(session, sessionId);
+    } catch {
+      throw new AppError("DB 세션 조회에 실패했습니다. DATABASE_URL과 Prisma 마이그레이션 상태를 확인해 주세요.");
+    }
   }
 
   async deleteById(sessionId: string): Promise<void> {
-    void sessionId;
-    // TODO(phase-2): DB 세션 테이블 delete 구현
-    throw new AppError("DB 세션 저장소는 아직 연결되지 않았습니다. AUTH_SESSION_STORE=memory를 사용해 주세요.");
+    try {
+      await authRepository.revokeSessionByToken(sessionId);
+    } catch {
+      throw new AppError("DB 세션 종료에 실패했습니다. DATABASE_URL과 Prisma 마이그레이션 상태를 확인해 주세요.");
+    }
   }
 }
 
