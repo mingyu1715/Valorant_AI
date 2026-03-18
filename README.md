@@ -151,6 +151,7 @@ npm run dev
 ## DB 2단계에서 직접 해야 하는 작업
 
 1. `.env.local`에 실제 `DATABASE_URL`을 입력합니다.
+1. Prisma 7 기준으로 연결 URL은 `prisma.config.ts`에서 읽습니다.
 1. Prisma Client를 생성합니다: `npm run db:generate`
 1. 마이그레이션 파일을 생성/적용합니다: `npm run db:migrate:dev -- --name init`
 1. 배포 환경에서는 마이그레이션 적용만 실행합니다: `npm run db:migrate:deploy`

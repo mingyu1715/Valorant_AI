@@ -1,6 +1,5 @@
 import { AppError, getEnv } from "@/src/server/shared";
 import type { AuthSessionRecord, AuthSessionStore } from "@/src/server/auth/types";
-import { authRepository } from "@/src/server/db/repositories";
 
 type AuthSessionStoreKind = "memory" | "db";
 
@@ -34,6 +33,7 @@ class InMemoryAuthSessionStore implements AuthSessionStore {
 class DbAuthSessionStore implements AuthSessionStore {
   async create(record: AuthSessionRecord): Promise<void> {
     try {
+      const { authRepository } = await import("@/src/server/db/repositories");
       await authRepository.createSessionFromAuthRecord({
         authSession: record
       });
@@ -44,6 +44,7 @@ class DbAuthSessionStore implements AuthSessionStore {
 
   async getById(sessionId: string): Promise<AuthSessionRecord | null> {
     try {
+      const { authRepository } = await import("@/src/server/db/repositories");
       const session = await authRepository.findActiveSessionByToken(sessionId);
       if (!session) {
         return null;
@@ -56,6 +57,7 @@ class DbAuthSessionStore implements AuthSessionStore {
 
   async deleteById(sessionId: string): Promise<void> {
     try {
+      const { authRepository } = await import("@/src/server/db/repositories");
       await authRepository.revokeSessionByToken(sessionId);
     } catch {
       throw new AppError("DB 세션 종료에 실패했습니다. DATABASE_URL과 Prisma 마이그레이션 상태를 확인해 주세요.");
