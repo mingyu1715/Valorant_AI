@@ -12,8 +12,27 @@ type AdminLogConsoleProps = {
   authorized: boolean;
 };
 
+type ApiTestResult = {
+  label: string;
+  method: string;
+  url: string;
+  status: number | null;
+  ok: boolean;
+  timestamp: string;
+  body: unknown;
+};
+
 function formatContext(value: unknown): string {
   return JSON.stringify(value, null, 2);
+}
+
+function extractErrorMessage(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const error = (payload as Record<string, unknown>).error;
+  return typeof error === "string" ? error : null;
 }
 
 function AdminPageFrame({ children }: { children: ReactNode }) {
@@ -36,6 +55,11 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
         ? "로그를 불러오는 중입니다."
         : "관리자 토큰 인증이 필요합니다."
   );
+  const [testStatus, setTestStatus] = useState("운영 테스트 실행 대기");
+  const [testResult, setTestResult] = useState<ApiTestResult | null>(null);
+  const [isRunningTest, setIsRunningTest] = useState(false);
+  const [testRiotId, setTestRiotId] = useState("");
+  const [testRiotTag, setTestRiotTag] = useState("");
   const [token, setToken] = useState("");
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const pollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -110,6 +134,86 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
       method: "DELETE"
     });
     window.location.reload();
+  }
+
+  async function runApiTest(label: string, url: string, init?: RequestInit) {
+    setIsRunningTest(true);
+    setTestStatus(`${label} 실행 중...`);
+
+    try {
+      const response = await fetch(url, {
+        cache: "no-store",
+        ...init
+      });
+
+      let payload: unknown = null;
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
+      }
+
+      setTestResult({
+        label,
+        method: init?.method ?? "GET",
+        url,
+        status: response.status,
+        ok: response.ok,
+        timestamp: new Date().toISOString(),
+        body: payload
+      });
+
+      if (!response.ok) {
+        const apiError = extractErrorMessage(payload);
+        throw new Error(apiError || `요청 실패 (${response.status})`);
+      }
+
+      setTestStatus(`${label} 성공`);
+    } catch (error) {
+      setTestStatus(error instanceof Error ? `${label} 실패: ${error.message}` : `${label} 실패`);
+    } finally {
+      setIsRunningTest(false);
+    }
+  }
+
+  async function handleTestSession() {
+    await runApiTest("유저 세션 확인", "/api/auth/session");
+  }
+
+  async function handleTestMatchSync() {
+    await runApiTest("내 경기 동기화", "/api/matches/sync", {
+      method: "POST"
+    });
+  }
+
+  async function handleTestAnalyzeCreate() {
+    const riotId = testRiotId.trim();
+    const riotTag = testRiotTag.trim();
+    if (!riotId || !riotTag) {
+      setTestStatus("분석 요청 테스트를 위해 Riot ID와 태그를 입력해 주세요.");
+      return;
+    }
+
+    await runApiTest("분석 작업 생성", "/api/analyze", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        riotId,
+        riotTag
+      })
+    });
+  }
+
+  async function handleTestAnalyzeError() {
+    await runApiTest("분석 오류 테스트", "/api/analyze?error=true", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({})
+    });
   }
 
   useEffect(() => {
@@ -242,6 +346,94 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
                 잠금
               </button>
             </div>
+          </div>
+        </section>
+
+        <section className="mt-5 rounded-3xl border border-gray-700/50 bg-gray-900/55 p-6 backdrop-blur-sm">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-red-300/90">운영 테스트</p>
+              <h2 className="font-display text-[clamp(1.9rem,3vw,2.6rem)] leading-[1.05] text-stone-100 text-balance break-words">
+                관리자 테스트 패널
+              </h2>
+            </div>
+            <span className="rounded-full border border-white/8 bg-white/5 px-4 py-2 text-sm text-slate-300">{testStatus}</span>
+          </div>
+
+          <div className="grid gap-4 rounded-[24px] border border-white/8 bg-black/20 p-5">
+            <div className="grid gap-3 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-slate-400">Riot ID</span>
+                <input
+                  value={testRiotId}
+                  onChange={(event) => setTestRiotId(event.target.value)}
+                  className="w-full rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-sm text-stone-100 outline-none placeholder:text-slate-500 focus:border-red-400/50 focus:bg-red-400/10"
+                  placeholder="예: PlayerName"
+                  autoComplete="off"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-2 block text-xs uppercase tracking-[0.2em] text-slate-400">Riot Tag</span>
+                <input
+                  value={testRiotTag}
+                  onChange={(event) => setTestRiotTag(event.target.value)}
+                  className="w-full rounded-[14px] border border-white/10 bg-white/5 px-3 py-2 text-sm text-stone-100 outline-none placeholder:text-slate-500 focus:border-red-400/50 focus:bg-red-400/10"
+                  placeholder="예: KR1"
+                  autoComplete="off"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => void handleTestSession()}
+                disabled={isRunningTest}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-100 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                유저 세션 확인
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleTestMatchSync()}
+                disabled={isRunningTest}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/10 bg-white/5 px-4 text-xs font-semibold uppercase tracking-[0.16em] text-slate-100 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                내 경기 동기화
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleTestAnalyzeCreate()}
+                disabled={isRunningTest}
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-gradient-to-r from-red-600 to-red-500 px-4 text-xs font-semibold uppercase tracking-[0.16em] text-white disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                분석 작업 생성
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleTestAnalyzeError()}
+                disabled={isRunningTest}
+                className="inline-flex min-h-11 items-center justify-center rounded-full border border-orange-500/50 bg-orange-500/10 px-4 text-xs font-semibold uppercase tracking-[0.16em] text-orange-200 hover:bg-orange-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                분석 오류 테스트
+              </button>
+            </div>
+
+            {testResult && (
+              <article className={`rounded-[18px] border p-4 ${testResult.ok ? "border-cyan-500/30 bg-cyan-500/10" : "border-orange-500/30 bg-orange-500/10"}`}>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-sm text-slate-300">
+                    {testResult.label} · {testResult.method} {testResult.url}
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${testResult.ok ? "badge-success" : "badge-error"}`}>
+                    {testResult.status}
+                  </span>
+                </div>
+                <pre className="overflow-x-auto rounded-[14px] border border-white/8 bg-black/25 p-3 text-xs leading-6 text-slate-300">
+                  {formatContext(testResult.body)}
+                </pre>
+              </article>
+            )}
           </div>
         </section>
 
