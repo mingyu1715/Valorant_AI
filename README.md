@@ -18,6 +18,7 @@ Riot API와 Gemini를 이용해 최근 VALORANT 경기 데이터를 수집하고
 - 최근 경기 수집 후 4개 세그먼트 분석
 - Gemini 기반 행동 교정 피드백 3개 생성
 - Riot RSO mock/real provider 분리 + 내부 세션 발급 골격
+- RiotAccount(puuid) 기반 최근 match 증분 sync 골격 (mock/real client 분리)
 - 관리자 토큰 기반 운영 로그 콘솔
 - 분석 요청 rate limit 및 민감 로그 마스킹
 
@@ -38,11 +39,14 @@ app/
         callback/     Riot RSO 콜백 + 내부 세션 발급
       logout/         내부 세션 로그아웃
       session/        현재 로그인 세션 조회
+    matches/
+      sync/           내 경기 증분 동기화
   dashboard/          분석 대시보드
 components/           대시보드 및 운영 UI
 src/server/           Riot, Gemini, 분석 파이프라인 로직
 src/server/auth/      RSO provider, 세션 저장소 추상화, 쿠키 헬퍼
 src/server/db/        Prisma client + repository 골격
+src/server/match-sync/ match sync service + mock/real Riot API client
 prisma/schema.prisma  DB 스키마
 public/riot.txt       Riot 심사용 공개 파일
 ```
@@ -64,6 +68,7 @@ cp .env.local.example .env.local
 3. 값 입력
 
 - `RIOT_API_KEY`
+- `RIOT_MATCH_API_PROVIDER` (`mock` 또는 `real`, 기본 `mock`)
 - `GEMINI_API_KEY`
 - `ADMIN_ACCESS_TOKEN`
 - `DATABASE_URL`
@@ -86,6 +91,10 @@ npm run dev
 | --- | --- | --- |
 | `DATABASE_URL` | DB 사용 시 필수 | Prisma 연결 문자열 |
 | `RIOT_API_KEY` | Yes | Riot API 키 |
+| `RIOT_MATCH_API_PROVIDER` | No | match sync API client 선택 (`mock` / `real`) |
+| `RIOT_MATCH_SYNC_MAX_IDS` | No | 한 번에 동기화할 최대 match id 수 |
+| `RIOT_MATCH_LIST_BASE_URL` | No | Real client용 matchlist base URL |
+| `RIOT_MATCH_DETAIL_BASE_URL` | No | Real client용 match detail base URL |
 | `GEMINI_API_KEY` | Yes | Gemini API 키 |
 | `RIOT_ID` | No | 기본 Riot ID |
 | `RIOT_TAG` | No | 기본 Riot Tag |
@@ -120,6 +129,7 @@ npm run dev
 - `/dashboard` : 분석 대시보드
 - `/admin/logs` : 관리자 로그 콘솔
 - `/api/analyze` : 분석 작업 생성 및 상태 조회
+- `/api/matches/sync` : 내 경기 증분 동기화 실행
 - `/api/auth/riot/start` : Riot RSO 시작
 - `/api/auth/riot/callback` : Riot RSO 콜백
 - `/api/auth/session` : 내부 로그인 세션 상태 조회
@@ -139,6 +149,7 @@ npm run dev
 ## Current Limitations
 
 - `RIOT_AUTH_PROVIDER=real`일 때는 콜백 토큰 교환/사용자 식별 로직이 아직 TODO 상태입니다.
+- `RIOT_MATCH_API_PROVIDER=real`일 때 Riot match list/detail 호출은 아직 TODO 상태입니다.
 - `AUTH_SESSION_STORE=db`는 세션 스토어 연결부가 아직 TODO 상태이며, 현재 기본은 `memory`입니다.
 - 타입 체크는 `typescript` 설치 후 `npx tsc -p tsconfig.json --noEmit`로 검증할 수 있습니다.
 

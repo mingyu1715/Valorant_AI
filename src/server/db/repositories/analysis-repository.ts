@@ -7,6 +7,7 @@ type JsonInput = Prisma.InputJsonValue;
 type DbClientLike = {
   rawMatch: {
     upsert: (args: unknown) => Promise<unknown>;
+    findMany: (args: unknown) => Promise<Array<{ matchId: string }>>;
   };
   playerFeatureSnapshot: {
     findFirst: (args: unknown) => Promise<unknown | null>;
@@ -82,6 +83,26 @@ export class AnalysisRepository {
         region: input.region ?? undefined
       }
     });
+  }
+
+  async findExistingMatchIds(matchIds: string[]): Promise<Set<string>> {
+    const normalizedIds = [...new Set(matchIds.map((item) => item.trim()).filter(Boolean))];
+    if (!normalizedIds.length) {
+      return new Set<string>();
+    }
+
+    const rows = await this.db.rawMatch.findMany({
+      where: {
+        matchId: {
+          in: normalizedIds
+        }
+      },
+      select: {
+        matchId: true
+      }
+    });
+
+    return new Set(rows.map((row) => row.matchId));
   }
 
   async upsertFeatureSnapshot(input: UpsertFeatureSnapshotInput): Promise<unknown> {

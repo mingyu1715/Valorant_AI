@@ -38,6 +38,7 @@ type DbClientLike = {
   };
   riotAccount: {
     findUnique: (args: unknown) => Promise<DbRiotAccountRecord | null>;
+    findFirst: (args: unknown) => Promise<DbRiotAccountRecord | null>;
     upsert: (args: unknown) => Promise<DbRiotAccountRecord>;
   };
   session: {
@@ -78,6 +79,18 @@ export class AuthRepository {
   async findRiotAccountByPuuid(puuid: string): Promise<DbRiotAccountRecord | null> {
     return this.db.riotAccount.findUnique({
       where: { puuid }
+    });
+  }
+
+  async findRiotAccountByUserId(userId: string): Promise<DbRiotAccountRecord | null> {
+    const normalizedUserId = userId.trim();
+    if (!normalizedUserId) {
+      return null;
+    }
+
+    return this.db.riotAccount.findFirst({
+      where: { userId: normalizedUserId },
+      orderBy: { updatedAt: "desc" }
     });
   }
 
