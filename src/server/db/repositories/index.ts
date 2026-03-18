@@ -9,6 +9,7 @@ export {
 export {
   analysisRepository,
   AnalysisRepository,
+  type RawMatchRecordForFeatureExtraction,
   type UpsertAnalysisCacheInput,
   type UpsertFeatureSnapshotInput,
   type UpsertRawMatchInput

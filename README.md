@@ -19,6 +19,7 @@ Riot API와 Gemini를 이용해 최근 VALORANT 경기 데이터를 수집하고
 - Gemini 기반 행동 교정 피드백 3개 생성
 - Riot RSO mock/real provider 분리 + 내부 세션 발급 골격
 - RiotAccount(puuid) 기반 최근 match 증분 sync 골격 (mock/real client 분리)
+- RawMatch -> Round/Match/Aggregate feature extractor 계층
 - 관리자 토큰 기반 운영 로그 콘솔
 - 분석 요청 rate limit 및 민감 로그 마스킹
 
@@ -47,6 +48,7 @@ src/server/           Riot, Gemini, 분석 파이프라인 로직
 src/server/auth/      RSO provider, 세션 저장소 추상화, 쿠키 헬퍼
 src/server/db/        Prisma client + repository 골격
 src/server/match-sync/ match sync service + mock/real Riot API client
+src/server/features/  feature extractor + snapshot 저장 service
 prisma/schema.prisma  DB 스키마
 public/riot.txt       Riot 심사용 공개 파일
 ```
@@ -152,6 +154,7 @@ npm run dev
 
 - `RIOT_AUTH_PROVIDER=real`일 때는 콜백 토큰 교환/사용자 식별 로직이 아직 TODO 상태입니다.
 - `RIOT_MATCH_API_PROVIDER=real`일 때 Riot match list/detail 호출은 아직 TODO 상태입니다.
+- 실 Riot raw 응답의 round 상세 필드 매핑(`src/server/features/extractor.ts`)은 TODO가 남아 있습니다.
 - `AUTH_SESSION_STORE=db`는 세션 스토어 연결부가 아직 TODO 상태이며, 현재 기본은 `memory`입니다.
 - 타입 체크는 `typescript` 설치 후 `npx tsc -p tsconfig.json --noEmit`로 검증할 수 있습니다.
 

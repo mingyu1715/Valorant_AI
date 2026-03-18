@@ -7,7 +7,7 @@ type JsonInput = Prisma.InputJsonValue;
 type DbClientLike = {
   rawMatch: {
     upsert: (args: unknown) => Promise<unknown>;
-    findMany: (args: unknown) => Promise<Array<{ matchId: string }>>;
+    findMany: (args: unknown) => Promise<Array<Record<string, unknown>>>;
   };
   playerFeatureSnapshot: {
     findFirst: (args: unknown) => Promise<unknown | null>;
@@ -38,6 +38,13 @@ export interface UpsertFeatureSnapshotInput {
   featureJson: JsonInput;
   sourceMatchIdsJson?: JsonInput | null;
   metadataJson?: JsonInput | null;
+}
+
+export interface RawMatchRecordForFeatureExtraction {
+  matchId: string;
+  puuid: string;
+  gameStartAt: Date | null;
+  rawJson: unknown;
 }
 
 export interface UpsertAnalysisCacheInput {
@@ -102,7 +109,41 @@ export class AnalysisRepository {
       }
     });
 
-    return new Set(rows.map((row) => row.matchId));
+    return new Set(
+      rows
+        .map((row) => String(row.matchId ?? "").trim())
+        .filter(Boolean)
+    );
+  }
+
+  async findRawMatchesByPuuid(puuid: string, limit = 20): Promise<RawMatchRecordForFeatureExtraction[]> {
+    const normalizedPuuid = puuid.trim();
+    if (!normalizedPuuid) {
+      return [];
+    }
+
+    const rows = await this.db.rawMatch.findMany({
+      where: {
+        puuid: normalizedPuuid
+      },
+      orderBy: {
+        gameStartAt: "desc"
+      },
+      take: Math.max(1, Math.min(limit, 100)),
+      select: {
+        matchId: true,
+        puuid: true,
+        gameStartAt: true,
+        rawJson: true
+      }
+    });
+
+    return rows.map((row) => ({
+      matchId: String(row.matchId ?? ""),
+      puuid: String(row.puuid ?? normalizedPuuid),
+      gameStartAt: row.gameStartAt instanceof Date ? row.gameStartAt : null,
+      rawJson: row.rawJson ?? null
+    }));
   }
 
   async upsertFeatureSnapshot(input: UpsertFeatureSnapshotInput): Promise<unknown> {
