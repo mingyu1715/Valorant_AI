@@ -1,4 +1,4 @@
-import { AppError, getEnv } from "@/src/server/shared";
+import { AppError, getEnv, isMockRestrictedRuntime } from "@/src/server/shared";
 import type { AuthSessionRecord, AuthSessionStore } from "@/src/server/auth/types";
 
 type AuthSessionStoreKind = "memory" | "db";
@@ -75,7 +75,7 @@ export function getConfiguredAuthSessionStoreKind(): AuthSessionStoreKind {
 
 export function getAuthSessionStore(): AuthSessionStore {
   const storeKind = getConfiguredAuthSessionStoreKind();
-  if (process.env.NODE_ENV === "production" && storeKind === "memory") {
+  if (isMockRestrictedRuntime() && storeKind === "memory") {
     throw new AppError("production 환경에서는 AUTH_SESSION_STORE=db만 허용됩니다.");
   }
   return storeKind === "db" ? dbStore : inMemoryStore;

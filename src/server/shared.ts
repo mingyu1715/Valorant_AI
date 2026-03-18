@@ -153,6 +153,11 @@ export function isTruthy(value: unknown): boolean {
     .toLowerCase() in { "1": true, "true": true, "yes": true, "on": true };
 }
 
+export function isMockRestrictedRuntime(): boolean {
+  const allowMockInProduction = isTruthy(getEnv("ALLOW_MOCK_IN_PRODUCTION", "0"));
+  return process.env.NODE_ENV === "production" && !allowMockInProduction;
+}
+
 export function useSampleAnalytics(): boolean {
   return isTruthy(getEnv("USE_SAMPLE_ANALYTICS", "0"));
 }

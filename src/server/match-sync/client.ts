@@ -1,4 +1,4 @@
-import { AppError, getEnv } from "@/src/server/shared";
+import { AppError, getEnv, isMockRestrictedRuntime } from "@/src/server/shared";
 import { MockRiotMatchApiClient } from "@/src/server/match-sync/mock-client";
 import { RealRiotMatchApiClient } from "@/src/server/match-sync/real-client";
 import type { RiotMatchApiClient, RiotMatchApiClientKind } from "@/src/server/match-sync/types";
@@ -24,7 +24,7 @@ export function getConfiguredRiotMatchApiClientKind(): RiotMatchApiClientKind {
 export function getRiotMatchApiClient(
   kind: RiotMatchApiClientKind = getConfiguredRiotMatchApiClientKind()
 ): RiotMatchApiClient {
-  if (process.env.NODE_ENV === "production" && kind === "mock") {
+  if (isMockRestrictedRuntime() && kind === "mock") {
     throw new AppError("production 환경에서는 RIOT_MATCH_API_PROVIDER=mock를 사용할 수 없습니다.");
   }
   return kind === "real" ? realClient : mockClient;

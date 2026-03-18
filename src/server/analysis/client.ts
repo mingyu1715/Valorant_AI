@@ -1,4 +1,4 @@
-import { AppError, getEnv } from "@/src/server/shared";
+import { AppError, getEnv, isMockRestrictedRuntime } from "@/src/server/shared";
 import { MockGeminiAnalysisClient } from "@/src/server/analysis/mock-client";
 import { RealGeminiAnalysisClient } from "@/src/server/analysis/real-client";
 import type { AnalysisClient, AnalysisClientKind } from "@/src/server/analysis/types";
@@ -14,7 +14,7 @@ export function getConfiguredAnalysisClientKind(): AnalysisClientKind {
 export function getAnalysisClient(
   kind: AnalysisClientKind = getConfiguredAnalysisClientKind()
 ): AnalysisClient {
-  if (process.env.NODE_ENV === "production" && kind === "mock") {
+  if (isMockRestrictedRuntime() && kind === "mock") {
     throw new AppError("production 환경에서는 LLM_ANALYSIS_PROVIDER=mock를 사용할 수 없습니다.");
   }
   return kind === "real" ? realClient : mockClient;

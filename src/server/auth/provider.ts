@@ -1,4 +1,4 @@
-import { AppError, getEnv } from "@/src/server/shared";
+import { AppError, getEnv, isMockRestrictedRuntime } from "@/src/server/shared";
 import { MockRiotAuthProvider } from "@/src/server/auth/mock-provider";
 import { RealRiotAuthProvider } from "@/src/server/auth/real-provider";
 import type { RiotAuthProvider, RiotAuthProviderKind } from "@/src/server/auth/types";
@@ -12,7 +12,7 @@ export function getConfiguredRiotAuthProviderKind(): RiotAuthProviderKind {
 }
 
 export function getRiotAuthProvider(kind: RiotAuthProviderKind = getConfiguredRiotAuthProviderKind()): RiotAuthProvider {
-  if (process.env.NODE_ENV === "production" && kind === "mock") {
+  if (isMockRestrictedRuntime() && kind === "mock") {
     throw new AppError("production 환경에서는 RIOT_AUTH_PROVIDER=mock를 사용할 수 없습니다.");
   }
   return kind === "real" ? realProvider : mockProvider;
