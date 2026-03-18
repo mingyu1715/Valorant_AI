@@ -1,0 +1,19 @@
+#!/bin/sh
+set -eu
+
+echo "[pre-commit] security check"
+
+if command -v npm >/dev/null 2>&1; then
+  npm run -s security:check
+  exit 0
+fi
+
+if [ -f "$HOME/.nvm/nvm.sh" ]; then
+  # shellcheck disable=SC1090
+  . "$HOME/.nvm/nvm.sh"
+  npm run -s security:check
+  exit 0
+fi
+
+echo "[pre-commit] npm을 찾을 수 없어 security check를 실행하지 못했습니다."
+exit 1

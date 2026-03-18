@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "node scripts/start.mjs",
+    "security:check": "node scripts/security-check.mjs",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy"

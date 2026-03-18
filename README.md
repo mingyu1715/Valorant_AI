@@ -141,6 +141,8 @@ npm run dev
 
 - `.env`, `.env.local`은 Git에 포함되지 않습니다.
 - 예시 환경변수 파일은 `.env.local.example` 하나만 유지합니다.
+- 커밋 전 시크릿 검사 스크립트: `npm run security:check`
+- pre-commit 훅 사용 시 1회 설정: `git config core.hooksPath .githooks`
 - 관리자 로그 콘솔은 `ADMIN_ACCESS_TOKEN` 기반 세션 인증이 필요합니다.
 - `/api/analyze`는 IP 기준 rate limit이 적용됩니다.
 - 로그에 기록되는 API 키, 쿠키, 토큰은 마스킹됩니다.
