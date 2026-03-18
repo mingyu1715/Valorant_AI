@@ -1,9 +1,8 @@
-import type { Prisma } from "@prisma/client";
-
 import { buildThemeAnalysisInputPayloadMap } from "@/src/server/analysis-input/builder";
 import type { AnalysisThemeKey, PlayerAnalysisInput, ThemeAnalysisInputPayload } from "@/src/server/analysis-input/types";
 import { analysisRepository } from "@/src/server/db/repositories";
 import { DEFAULT_GEMINI_MODEL, getEnv } from "@/src/server/shared";
+import type { SerializableJsonValue } from "@/src/server/types";
 import { buildAnalysisCacheKey, getAnalysisCacheTtlSeconds } from "@/src/server/analysis/cache";
 import { getAnalysisClient } from "@/src/server/analysis/client";
 import {
@@ -50,8 +49,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function toPrismaJsonValue(value: unknown): Prisma.InputJsonValue {
-  return JSON.parse(JSON.stringify(value ?? null)) as Prisma.InputJsonValue;
+function toPrismaJsonValue(value: unknown): SerializableJsonValue {
+  return JSON.parse(JSON.stringify(value ?? null)) as SerializableJsonValue;
 }
 
 function getConfiguredAnalysisModel(): string {

@@ -2,6 +2,15 @@ export type SectionKey = "attack_defense" | "economy" | "clutch" | "utility";
 export type JobStatus = "queued" | "collecting" | "analyzing" | "completed" | "failed";
 export type SectionStatus = "pending" | "running" | "completed" | "error";
 
+export type SerializableJsonPrimitive = string | number | boolean | null;
+export type SerializableJsonValue =
+  | SerializableJsonPrimitive
+  | SerializableJsonObject
+  | SerializableJsonValue[];
+export interface SerializableJsonObject {
+  [key: string]: SerializableJsonValue;
+}
+
 export interface PlayerPayload {
   riotId: string;
   riotTag: string;

@@ -1,11 +1,12 @@
 import { createHash } from "node:crypto";
 
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
 import type { AuthSessionRecord, RiotAuthIdentity } from "@/src/server/auth/types";
 import { prisma } from "@/src/server/db/client";
+import type { SerializableJsonValue } from "@/src/server/types";
 
-type JsonInput = Prisma.InputJsonValue;
+type JsonInput = SerializableJsonValue;
 
 type DbSessionRecord = {
   id: string;

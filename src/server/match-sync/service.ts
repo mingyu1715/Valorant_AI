@@ -1,5 +1,3 @@
-import type { Prisma } from "@prisma/client";
-
 import { analysisRepository, authRepository } from "@/src/server/db/repositories";
 import {
   AppError,
@@ -17,6 +15,7 @@ import type {
   RiotMatchListItem,
   SyncRecentMatchesInput
 } from "@/src/server/match-sync/types";
+import type { SerializableJsonValue } from "@/src/server/types";
 
 const DEFAULT_MATCH_SYNC_MAX_IDS = 20;
 
@@ -25,8 +24,8 @@ interface SyncTargetAccount {
   puuid: string;
 }
 
-function toPrismaJsonValue(value: unknown): Prisma.InputJsonValue {
-  return JSON.parse(JSON.stringify(value ?? null)) as Prisma.InputJsonValue;
+function toPrismaJsonValue(value: unknown): SerializableJsonValue {
+  return JSON.parse(JSON.stringify(value ?? null)) as SerializableJsonValue;
 }
 
 function toDateOrNull(value: string | number | null | undefined): Date | null {
@@ -78,7 +77,7 @@ function buildRawMatchPayload(params: {
   matchListItem: RiotMatchListItem;
   matchDetail: RiotMatchDetailPayload;
   clientKind: RiotMatchApiClient["kind"];
-}): Prisma.InputJsonValue {
+}): SerializableJsonValue {
   return toPrismaJsonValue({
     schemaVersion: "raw-match-v1",
     source: {
