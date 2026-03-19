@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { startTransition, useEffect, useRef, useState, type ReactNode } from "react";
 
+import { useLanguage } from "@/components/language-provider";
+import { LocalizedLink } from "@/components/localized-link";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { withLanguagePrefix } from "@/src/i18n/config";
 import type { LogEntry } from "@/src/server/types";
 
 type AdminLogConsoleProps = {
@@ -47,6 +49,9 @@ function AdminPageFrame({ children }: { children: ReactNode }) {
 }
 
 export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
+  const { prefix } = useLanguage();
+  const toApiPath = (path: string) => withLanguagePrefix(path, prefix);
+
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [status, setStatus] = useState(
     !enabled
@@ -84,7 +89,7 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
 
     try {
       setStatus("최근 로그를 불러오는 중입니다.");
-      const response = await fetch("/api/admin/logs?limit=200", { cache: "no-store" });
+      const response = await fetch(toApiPath("/api/admin/logs?limit=200"), { cache: "no-store" });
       const payload = (await response.json()) as { logs?: LogEntry[]; error?: string };
       if (!response.ok) {
         throw new Error(payload.error || `요청 실패 (${response.status})`);
@@ -105,7 +110,7 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
     setStatus("관리자 세션을 생성하는 중입니다.");
 
     try {
-      const response = await fetch("/api/admin/session", {
+      const response = await fetch(toApiPath("/api/admin/session"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
@@ -128,7 +133,7 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
   }
 
   async function handleLogout() {
-    await fetch("/api/admin/session", {
+    await fetch(toApiPath("/api/admin/session"), {
       method: "DELETE"
     });
     window.location.reload();
@@ -139,7 +144,7 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
     setTestStatus(`${label} 실행 중...`);
 
     try {
-      const response = await fetch(url, {
+      const response = await fetch(url.startsWith("/") ? toApiPath(url) : url, {
         cache: "no-store",
         ...init
       });
@@ -226,12 +231,12 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
               `ADMIN_ACCESS_TOKEN` 환경 변수를 설정해야 운영 로그 콘솔이 활성화됩니다.
             </p>
             <div className="mt-6">
-              <Link
+              <LocalizedLink
                 href="/dashboard"
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
               >
                 대시보드
-              </Link>
+              </LocalizedLink>
             </div>
           </section>
         </main>
@@ -275,12 +280,12 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
                 >
                   {isAuthenticating ? "확인 중..." : "로그 열기"}
                 </button>
-                <Link
+                <LocalizedLink
                   href="/dashboard"
                   className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
                 >
                   대시보드
-                </Link>
+                </LocalizedLink>
               </div>
             </form>
 
@@ -310,12 +315,12 @@ export function AdminLogConsole({ enabled, authorized }: AdminLogConsoleProps) {
             </div>
 
             <div className="flex flex-wrap gap-3">
-              <Link
+              <LocalizedLink
                 href="/dashboard"
                 className="inline-flex min-h-12 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 text-sm font-semibold uppercase tracking-[0.18em] text-slate-200 hover:bg-white/8"
               >
                 대시보드
-              </Link>
+              </LocalizedLink>
               <button
                 type="button"
                 onClick={() => void loadLogs()}

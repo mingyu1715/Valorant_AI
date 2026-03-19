@@ -10,6 +10,7 @@ import {
   buildFinalSummaryPrompt,
   buildThemeAnalysisPrompt
 } from "@/src/server/analysis/prompt-builder";
+import type { AppLanguage } from "@/src/i18n/config";
 import type {
   AnalysisClient,
   AnalysisResultBundle,
@@ -20,7 +21,7 @@ import type {
 } from "@/src/server/analysis/types";
 
 const THEME_KEYS: AnalysisThemeKey[] = ["combat", "economy", "context"];
-const REPORT_TONE_ENDINGS = [
+const KO_REPORT_TONE_ENDINGS = [
   "패턴입니다",
   "경향이 있습니다",
   "보입니다",
@@ -57,7 +58,7 @@ function getConfiguredAnalysisModel(): string {
   return getEnv("LLM_ANALYSIS_MODEL", getEnv("GEMINI_MODEL", DEFAULT_GEMINI_MODEL));
 }
 
-function sanitizeForbiddenTone(text: string): string {
+function sanitizeForbiddenToneKo(text: string): string {
   let normalized = text;
   for (const [pattern, replacement] of FORBIDDEN_TONE_REPLACEMENTS) {
     normalized = normalized.replace(pattern, replacement);
@@ -65,8 +66,14 @@ function sanitizeForbiddenTone(text: string): string {
   return normalized;
 }
 
-function ensureReportToneSentence(text: string, fallback: string): string {
-  const raw = sanitizeForbiddenTone((text || "").trim());
+function ensureReportToneSentence(text: string, fallback: string, lang: AppLanguage): string {
+  if (lang === "en") {
+    const normalized = (text || "").replace(/\s+/g, " ").trim() || fallback;
+    const withoutPunctuation = normalized.replace(/[.!?]+$/g, "").trim();
+    return withoutPunctuation ? `${withoutPunctuation}.` : fallback;
+  }
+
+  const raw = sanitizeForbiddenToneKo((text || "").trim());
   const base = raw || fallback;
   const collapsed = base.replace(/\s+/g, " ").trim();
   if (!collapsed) {
@@ -77,15 +84,21 @@ function ensureReportToneSentence(text: string, fallback: string): string {
     return fallback;
   }
 
-  if (REPORT_TONE_ENDINGS.some((ending) => withoutPunctuation.endsWith(ending))) {
+  if (KO_REPORT_TONE_ENDINGS.some((ending) => withoutPunctuation.endsWith(ending))) {
     return `${withoutPunctuation}.`;
   }
 
   return `${withoutPunctuation} 경향이 있습니다.`;
 }
 
-function ensureReportToneParagraph(text: string, fallback: string): string {
-  const raw = sanitizeForbiddenTone((text || "").trim());
+function ensureReportToneParagraph(text: string, fallback: string, lang: AppLanguage): string {
+  if (lang === "en") {
+    const normalized = (text || "").replace(/\s*\n+\s*/g, " ").replace(/\s+/g, " ").trim() || fallback;
+    const withoutPunctuation = normalized.replace(/[.!?]+$/g, "").trim();
+    return withoutPunctuation ? `${withoutPunctuation}.` : fallback;
+  }
+
+  const raw = sanitizeForbiddenToneKo((text || "").trim());
   const base = raw || fallback;
   const collapsed = base
     .replace(/\s*\n+\s*/g, " ")
@@ -100,7 +113,7 @@ function ensureReportToneParagraph(text: string, fallback: string): string {
     paragraph = `${paragraph}.`;
   }
 
-  if (!REPORT_TONE_ENDINGS.some((ending) => paragraph.includes(ending))) {
+  if (!KO_REPORT_TONE_ENDINGS.some((ending) => paragraph.includes(ending))) {
     paragraph = paragraph.replace(/[.!?]+$/g, "").trim();
     paragraph = `${paragraph} 경향이 있습니다.`;
   }
@@ -108,11 +121,18 @@ function ensureReportToneParagraph(text: string, fallback: string): string {
   return paragraph;
 }
 
-function normalizeThemeAnalysisResult(value: ThemeAnalysisResult): ThemeAnalysisResult {
-  const headline = ensureReportToneSentence(value.headline, "테마별 지표 해석 패턴입니다.");
+function normalizeThemeAnalysisResult(value: ThemeAnalysisResult, lang: AppLanguage): ThemeAnalysisResult {
+  const headline = ensureReportToneSentence(
+    value.headline,
+    lang === "en" ? "Theme metric interpretation pattern." : "테마별 지표 해석 패턴입니다.",
+    lang
+  );
   const analysisParagraph = ensureReportToneParagraph(
     value.analysisParagraph,
-    "입력 feature payload를 기준으로 테마별 지표 흐름이 나타나는 경향이 있습니다."
+    lang === "en"
+      ? "Theme metric trends are observed based on the input feature payload."
+      : "입력 feature payload를 기준으로 테마별 지표 흐름이 나타나는 경향이 있습니다.",
+    lang
   );
   return {
     headline,
@@ -120,11 +140,18 @@ function normalizeThemeAnalysisResult(value: ThemeAnalysisResult): ThemeAnalysis
   };
 }
 
-function normalizeFinalAnalysisResult(value: FinalAnalysisResult): FinalAnalysisResult {
-  const headline = ensureReportToneSentence(value.headline, "플레이 스타일 종합 해석 패턴입니다.");
+function normalizeFinalAnalysisResult(value: FinalAnalysisResult, lang: AppLanguage): FinalAnalysisResult {
+  const headline = ensureReportToneSentence(
+    value.headline,
+    lang === "en" ? "Overall playstyle interpretation pattern." : "플레이 스타일 종합 해석 패턴입니다.",
+    lang
+  );
   const analysisParagraph = ensureReportToneParagraph(
     value.analysisParagraph,
-    "표본 데이터 기준으로 일관된 플레이 흐름이 관찰되는 경향이 있습니다."
+    lang === "en"
+      ? "Consistent gameplay trends are observed based on the sample data."
+      : "표본 데이터 기준으로 일관된 플레이 흐름이 관찰되는 경향이 있습니다.",
+    lang
   );
   return {
     headline,
@@ -188,6 +215,7 @@ function getCacheExpiryDate(): Date {
 }
 
 interface AnalyzeThemePayloadInput {
+  lang: AppLanguage;
   puuid: string;
   window: string;
   version: string;
@@ -201,7 +229,7 @@ export async function analyzeThemePayload(
   client: AnalysisClient = getAnalysisClient()
 ): Promise<ThemeAnalysisResult> {
   const model = input.model ?? getConfiguredAnalysisModel();
-  const prompt = buildThemeAnalysisPrompt(input.featurePayload);
+  const prompt = buildThemeAnalysisPrompt(input.featurePayload, input.lang);
   const useCache = input.useCache !== false;
   const cacheIdentity = buildAnalysisCacheKey({
     scope: "theme",
@@ -220,17 +248,18 @@ export async function analyzeThemePayload(
     const parsedCachedOutput = parseThemeAnalysisResult(cachedOutput);
     if (parsedCachedOutput) {
       await analysisRepository.markAnalysisCacheHit(cacheIdentity.cacheKey);
-      return normalizeThemeAnalysisResult(parsedCachedOutput);
+      return normalizeThemeAnalysisResult(parsedCachedOutput, input.lang);
     }
   }
 
   const generated = await client.analyzeTheme({
+    lang: input.lang,
     theme: input.featurePayload.theme,
     featurePayload: input.featurePayload,
     prompt,
     model
   });
-  const normalizedGenerated = normalizeThemeAnalysisResult(generated);
+  const normalizedGenerated = normalizeThemeAnalysisResult(generated, input.lang);
 
   if (useCache) {
     await analysisRepository.upsertAnalysisCache({
@@ -242,6 +271,7 @@ export async function analyzeThemePayload(
       promptHash: cacheIdentity.promptHash,
       inputJson: toPrismaJsonValue({
         scope: "theme",
+        lang: input.lang,
         theme: input.featurePayload.theme,
         featurePayload: input.featurePayload,
         promptVersion: ANALYSIS_PROMPT_VERSION
@@ -259,6 +289,7 @@ export async function analyzeThemePayload(
 }
 
 interface AnalyzeThemePayloadSetInput {
+  lang: AppLanguage;
   puuid: string;
   window: string;
   version: string;
@@ -276,6 +307,7 @@ export async function analyzeThemePayloadSet(
   for (const theme of THEME_KEYS) {
     themeAnalysisResultMap[theme] = await analyzeThemePayload(
       {
+        lang: input.lang,
         puuid: input.puuid,
         window: input.window,
         version: input.version,
@@ -290,6 +322,7 @@ export async function analyzeThemePayloadSet(
 }
 
 interface AnalyzeFinalSummaryInput {
+  lang: AppLanguage;
   puuid: string;
   window: string;
   version: string;
@@ -305,6 +338,7 @@ export async function analyzeFinalSummary(
 ): Promise<FinalAnalysisResult> {
   const model = input.model ?? getConfiguredAnalysisModel();
   const prompt = buildFinalSummaryPrompt({
+    lang: input.lang,
     playerSummary: input.playerSummary,
     themeAnalyses: input.themeAnalyses
   });
@@ -329,17 +363,18 @@ export async function analyzeFinalSummary(
     const parsedCachedOutput = parseFinalAnalysisResult(cachedOutput);
     if (parsedCachedOutput) {
       await analysisRepository.markAnalysisCacheHit(cacheIdentity.cacheKey);
-      return normalizeFinalAnalysisResult(parsedCachedOutput);
+      return normalizeFinalAnalysisResult(parsedCachedOutput, input.lang);
     }
   }
 
   const generated = await client.analyzeFinalSummary({
+    lang: input.lang,
     playerSummary: input.playerSummary,
     themeAnalyses: input.themeAnalyses,
     prompt,
     model
   });
-  const normalizedGenerated = normalizeFinalAnalysisResult(generated);
+  const normalizedGenerated = normalizeFinalAnalysisResult(generated, input.lang);
 
   if (useCache) {
     await analysisRepository.upsertAnalysisCache({
@@ -351,6 +386,7 @@ export async function analyzeFinalSummary(
       promptHash: cacheIdentity.promptHash,
       inputJson: toPrismaJsonValue({
         scope: "final",
+        lang: input.lang,
         payload: cachePayload,
         promptVersion: ANALYSIS_PROMPT_VERSION
       }),
@@ -373,6 +409,7 @@ export async function generateAnalysisResult(
   const model = input.model ?? getConfiguredAnalysisModel();
   const themeAnalysisResultMap = await analyzeThemePayloadSet(
     {
+      lang: input.lang,
       puuid: input.puuid,
       window: input.window,
       version: input.version,
@@ -385,6 +422,7 @@ export async function generateAnalysisResult(
 
   const finalSummary = await analyzeFinalSummary(
     {
+      lang: input.lang,
       puuid: input.puuid,
       window: input.window,
       version: input.version,
@@ -397,6 +435,7 @@ export async function generateAnalysisResult(
   );
 
   return {
+    lang: input.lang,
     puuid: input.puuid,
     provider: client.kind,
     model,

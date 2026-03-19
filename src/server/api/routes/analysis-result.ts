@@ -4,6 +4,8 @@ import { generateSessionAnalysisResult } from "@/src/server/analysis/session-ana
 import { requireSession, resolveSessionPuuid, UnauthorizedError } from "@/src/server/auth/guards";
 import { DEFAULT_FEATURE_VERSION, DEFAULT_FEATURE_WINDOW } from "@/src/server/features/extractor";
 import { logError, maskPuuid } from "@/src/server/shared";
+import { getRequestLanguage } from "@/src/server/i18n/request";
+import { normalizeLanguageTag } from "@/src/i18n/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +28,8 @@ export async function POST(request: NextRequest) {
 
   const window = String(analysisRequestBody.window ?? DEFAULT_FEATURE_WINDOW).trim() || DEFAULT_FEATURE_WINDOW;
   const version = String(analysisRequestBody.version ?? DEFAULT_FEATURE_VERSION).trim() || DEFAULT_FEATURE_VERSION;
+  const payloadLang = normalizeLanguageTag(String(analysisRequestBody.lang ?? ""));
+  const language = payloadLang ?? getRequestLanguage(request);
   const limit = Math.min(toPositiveInt(analysisRequestBody.limit, 20), 100);
   const useCache = analysisRequestBody.useCache === undefined ? true : Boolean(analysisRequestBody.useCache);
   let resolvedPuuid = "";
@@ -34,6 +38,7 @@ export async function POST(request: NextRequest) {
     const session = await requireSession(request);
     resolvedPuuid = await resolveSessionPuuid(session);
     const analysisResult = await generateSessionAnalysisResult({
+      lang: language,
       puuid: resolvedPuuid,
       window,
       version,
@@ -59,6 +64,7 @@ export async function POST(request: NextRequest) {
       puuid: resolvedPuuid ? maskPuuid(resolvedPuuid) : "unauthenticated",
       window,
       version,
+      lang: language,
       limit,
       useCache,
       error: detail
@@ -73,6 +79,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   const window = request.nextUrl.searchParams.get("window")?.trim() || DEFAULT_FEATURE_WINDOW;
   const version = request.nextUrl.searchParams.get("version")?.trim() || DEFAULT_FEATURE_VERSION;
+  const language = getRequestLanguage(request);
   const limit = Math.min(toPositiveInt(request.nextUrl.searchParams.get("limit"), 20), 100);
   const useCacheRaw = request.nextUrl.searchParams.get("useCache");
   const useCache = useCacheRaw === null ? true : useCacheRaw !== "false";
@@ -82,6 +89,7 @@ export async function GET(request: NextRequest) {
     const session = await requireSession(request);
     resolvedPuuid = await resolveSessionPuuid(session);
     const analysisResult = await generateSessionAnalysisResult({
+      lang: language,
       puuid: resolvedPuuid,
       window,
       version,
@@ -107,6 +115,7 @@ export async function GET(request: NextRequest) {
       puuid: resolvedPuuid ? maskPuuid(resolvedPuuid) : "unauthenticated",
       window,
       version,
+      lang: language,
       limit,
       useCache,
       error: detail

@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { startTransition, useEffect, useState } from "react";
 
+import { LocalizedLink } from "@/components/localized-link";
+import { t, type Language, useLanguage } from "@/components/language-provider";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { withLanguagePrefix } from "@/src/i18n/config";
 import type { AnalysisThemeKey } from "@/src/server/analysis-input/types";
 import type { FinalAnalysisResult, ThemeAnalysisResultMap } from "@/src/server/analysis/types";
 import type { ThemeFeaturePayload, ThemeFeaturePayloadMap } from "@/src/server/theme-payloads/types";
@@ -62,11 +64,19 @@ type AnalysisResultResponse = {
   };
 };
 
-const SECTION_TITLES: Record<SectionKey, string> = {
-  attack_defense: "공수 진영 분석",
-  economy: "자금 및 경제",
-  clutch: "클러치 및 멘탈",
-  utility: "스킬 효율성"
+const SECTION_TITLES: Record<Language, Record<SectionKey, string>> = {
+  ko: {
+    attack_defense: "공수 진영 분석",
+    economy: "자금 및 경제",
+    clutch: "클러치 및 멘탈",
+    utility: "스킬 효율성"
+  },
+  en: {
+    attack_defense: "Attack / Defense",
+    economy: "Economy",
+    clutch: "Clutch / Mental",
+    utility: "Utility Efficiency"
+  }
 };
 
 const SECTION_THEME_MAP: Record<SectionKey, AnalysisThemeKey> = {
@@ -78,12 +88,21 @@ const SECTION_THEME_MAP: Record<SectionKey, AnalysisThemeKey> = {
 
 type DashboardTabKey = SectionKey | "final_summary";
 
-const DASHBOARD_TAB_TITLES: Record<DashboardTabKey, string> = {
-  attack_defense: "공수 진영 분석",
-  economy: "자금 및 경제",
-  clutch: "클러치 및 멘탈",
-  utility: "스킬 효율성",
-  final_summary: "최종 종합"
+const DASHBOARD_TAB_TITLES: Record<Language, Record<DashboardTabKey, string>> = {
+  ko: {
+    attack_defense: "공수 진영 분석",
+    economy: "자금 및 경제",
+    clutch: "클러치 및 멘탈",
+    utility: "스킬 효율성",
+    final_summary: "최종 종합"
+  },
+  en: {
+    attack_defense: "Attack / Defense",
+    economy: "Economy",
+    clutch: "Clutch / Mental",
+    utility: "Utility Efficiency",
+    final_summary: "Final Summary"
+  }
 };
 
 const MOCK_PREVIEW_THEME_FEATURES: ThemeFeaturePayloadMap = {
@@ -161,19 +180,36 @@ const MOCK_PREVIEW_FINAL_SUMMARY: FinalAnalysisResult = {
     "오프닝 주도권을 기반으로 라운드 템포를 먼저 가져오는 흐름이 비교적 자주 나타나는 편입니다. 다만 공수 전환이나 저투자 구간에서 라운드 안정성이 함께 흔들려 구간별 편차가 이어지는 경우가 보입니다. 핵심 강점 구간의 재현성을 유지하면서 변동 구간 조건을 함께 줄이면 종합 지표가 더 안정적으로 유지될 가능성이 있습니다."
 };
 
-const JOB_STATUS_LABELS: Record<AnalysisSnapshot["status"], string> = {
-  queued: "대기",
-  collecting: "수집 중",
-  analyzing: "분석 중",
-  completed: "완료",
-  failed: "실패"
+const JOB_STATUS_LABELS: Record<Language, Record<AnalysisSnapshot["status"], string>> = {
+  ko: {
+    queued: "대기",
+    collecting: "수집 중",
+    analyzing: "분석 중",
+    completed: "완료",
+    failed: "실패"
+  },
+  en: {
+    queued: "Queued",
+    collecting: "Collecting",
+    analyzing: "Analyzing",
+    completed: "Completed",
+    failed: "Failed"
+  }
 };
 
-const SECTION_STATUS_LABELS: Record<JobSectionPayload["status"], string> = {
-  pending: "대기",
-  running: "진행 중",
-  completed: "완료",
-  error: "오류"
+const SECTION_STATUS_LABELS: Record<Language, Record<JobSectionPayload["status"], string>> = {
+  ko: {
+    pending: "대기",
+    running: "진행 중",
+    completed: "완료",
+    error: "오류"
+  },
+  en: {
+    pending: "Pending",
+    running: "Running",
+    completed: "Completed",
+    error: "Error"
+  }
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -229,14 +265,15 @@ function formatThemeMetricValue(key: string, value: number | string): string {
   return value.toFixed(4);
 }
 
-function buildSectionFactsFromThemePayload(payload: ThemeFeaturePayload): string[] {
+function buildSectionFactsFromThemePayload(payload: ThemeFeaturePayload, language: Language): string[] {
   const entries = Object.entries(payload.metrics).slice(0, 3);
   const lines = entries.map(
     ([key, value]) => `${formatThemeMetricLabel(key)}: ${formatThemeMetricValue(key, value)}`
   );
-  lines.push(
-    `표본 ${payload.sampleMatches}경기 / ${payload.sampleRounds}라운드, 신뢰도 ${payload.confidence.toUpperCase()}`
-  );
+  lines.push(t(language, {
+    ko: `표본 ${payload.sampleMatches}경기 / ${payload.sampleRounds}라운드, 신뢰도 ${payload.confidence.toUpperCase()}`,
+    en: `Sample ${payload.sampleMatches} matches / ${payload.sampleRounds} rounds, confidence ${payload.confidence.toUpperCase()}`
+  }));
   return lines;
 }
 
@@ -260,19 +297,24 @@ function toThemeRawPayload(payload: ThemeFeaturePayload): Record<string, unknown
   };
 }
 
-function formatJobStatus(status: AnalysisSnapshot["status"]): string {
-  return JOB_STATUS_LABELS[status] ?? status;
+function formatJobStatus(status: AnalysisSnapshot["status"], language: Language): string {
+  return JOB_STATUS_LABELS[language][status] ?? status;
 }
 
-function formatSectionStatus(status: JobSectionPayload["status"]): string {
-  return SECTION_STATUS_LABELS[status] ?? status;
+function formatSectionStatus(status: JobSectionPayload["status"], language: Language): string {
+  return SECTION_STATUS_LABELS[language][status] ?? status;
 }
 
-function buildIdleSnapshot(riotId: string, riotTag: string): AnalysisSnapshot {
+function buildIdleSnapshot(riotId: string, riotTag: string, language: Language): AnalysisSnapshot {
+  const sectionTitles = SECTION_TITLES[language];
+
   return {
     jobId: "",
     status: "queued",
-    currentStep: "분석 작업을 생성하고 있습니다.",
+    currentStep: t(language, {
+      ko: "분석 작업을 생성하고 있습니다.",
+      en: "Creating an analysis job."
+    }),
     player: {
       riotId,
       riotTag,
@@ -286,9 +328,9 @@ function buildIdleSnapshot(riotId: string, riotTag: string): AnalysisSnapshot {
       total: 5,
       currentKey: null
     },
-    sections: (Object.keys(SECTION_TITLES) as SectionKey[]).map((key) => ({
+    sections: (Object.keys(sectionTitles) as SectionKey[]).map((key) => ({
       key,
-      title: SECTION_TITLES[key],
+      title: sectionTitles[key],
       status: "pending",
       facts: [],
       raw: {},
@@ -301,17 +343,18 @@ function buildIdleSnapshot(riotId: string, riotTag: string): AnalysisSnapshot {
   };
 }
 
-function buildMockPreviewSnapshot(riotId: string, riotTag: string): AnalysisSnapshot {
+function buildMockPreviewSnapshot(riotId: string, riotTag: string, language: Language): AnalysisSnapshot {
   const now = Date.now();
-  const sections = (Object.keys(SECTION_TITLES) as SectionKey[]).map((sectionKey) => {
+  const sectionTitles = SECTION_TITLES[language];
+  const sections = (Object.keys(sectionTitles) as SectionKey[]).map((sectionKey) => {
     const themeKey = SECTION_THEME_MAP[sectionKey];
     const themeFeature = MOCK_PREVIEW_THEME_FEATURES[themeKey];
     const themeAnalysis = MOCK_PREVIEW_THEME_ANALYSES[themeKey];
     return {
       key: sectionKey,
-      title: SECTION_TITLES[sectionKey],
+      title: sectionTitles[sectionKey],
       status: "completed",
-      facts: buildSectionFactsFromThemePayload(themeFeature),
+      facts: buildSectionFactsFromThemePayload(themeFeature, language),
       raw: toThemeRawPayload(themeFeature),
       analysis: toSectionAnalysis(themeAnalysis),
       error: null
@@ -321,18 +364,27 @@ function buildMockPreviewSnapshot(riotId: string, riotTag: string): AnalysisSnap
   return {
     jobId: "mock-preview",
     status: "completed",
-    currentStep: "Mock 모드 예시 분석 데이터를 표시하고 있습니다.",
+    currentStep: t(language, {
+      ko: "Mock 모드 예시 분석 데이터를 표시하고 있습니다.",
+      en: "Displaying mock preview analysis data."
+    }),
     player: {
       riotId,
       riotTag,
       puuidMasked: "mock-preview-puuid"
     },
     overview: {
-      facts: [
-        "Mock 모드 예시 데이터입니다. 실제 경기 데이터가 아닙니다.",
-        "최근 10경기 기준 샘플 feature와 테마 분석 결과를 미리 확인할 수 있습니다.",
-        "로그인 후 분석 시작을 누르면 세션 기반 실제(또는 mock API) 플로우로 다시 계산됩니다."
-      ],
+      facts: language === "en"
+        ? [
+            "This is mock preview data and not real match data.",
+            "You can preview sample feature metrics and theme analyses from the latest 10 matches.",
+            "After login, clicking Start Analysis runs the session-based flow again (real or mock API)."
+          ]
+        : [
+            "Mock 모드 예시 데이터입니다. 실제 경기 데이터가 아닙니다.",
+            "최근 10경기 기준 샘플 feature와 테마 분석 결과를 미리 확인할 수 있습니다.",
+            "로그인 후 분석 시작을 누르면 세션 기반 실제(또는 mock API) 플로우로 다시 계산됩니다."
+          ],
       raw: {
         matchesAnalyzed: 10,
         wins: 6,
@@ -513,7 +565,7 @@ function UtilityVisual({ raw }: { raw: Record<string, unknown> }) {
   );
 }
 
-function ThemeMetricVisual({ raw }: { raw: Record<string, unknown> }) {
+function ThemeMetricVisual({ raw, language }: { raw: Record<string, unknown>; language: Language }) {
   const metrics = getRecord(raw, "metrics");
   const confidence = String(raw.confidence ?? "").toUpperCase();
   const sampleMatches = getNumber(raw, "sampleMatches");
@@ -528,10 +580,13 @@ function ThemeMetricVisual({ raw }: { raw: Record<string, unknown> }) {
     <div className="rounded-[18px] border border-white/6 bg-black/15 p-4">
       <div className="mb-4 flex flex-wrap items-center gap-2">
         <span className="rounded-full border border-white/8 bg-white/5 px-3 py-1 text-xs text-slate-300">
-          표본 {sampleMatches}경기 / {sampleRounds}라운드
+          {t(language, {
+            ko: `표본 ${sampleMatches}경기 / ${sampleRounds}라운드`,
+            en: `Sample ${sampleMatches} matches / ${sampleRounds} rounds`
+          })}
         </span>
         <span className="rounded-full border border-cyan-400/30 bg-cyan-400/10 px-3 py-1 text-xs text-cyan-200">
-          신뢰도 {confidence || "N/A"}
+          {t(language, { ko: `신뢰도 ${confidence || "N/A"}`, en: `Confidence ${confidence || "N/A"}` })}
         </span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
@@ -548,13 +603,13 @@ function ThemeMetricVisual({ raw }: { raw: Record<string, unknown> }) {
   );
 }
 
-function SectionVisual({ section }: { section: JobSectionPayload }) {
+function SectionVisual({ section, language }: { section: JobSectionPayload; language: Language }) {
   if (!isRecord(section.raw)) {
     return null;
   }
 
   if (section.raw.__kind === "theme-metrics") {
-    return <ThemeMetricVisual raw={section.raw} />;
+    return <ThemeMetricVisual raw={section.raw} language={language} />;
   }
 
   if (section.key === "attack_defense") {
@@ -572,7 +627,15 @@ function SectionVisual({ section }: { section: JobSectionPayload }) {
   return null;
 }
 
-function SectionCard({ section }: { section: JobSectionPayload }) {
+function SectionCard({
+  section,
+  language,
+  sectionTitleMap
+}: {
+  section: JobSectionPayload;
+  language: Language;
+  sectionTitleMap: Record<SectionKey, string>;
+}) {
   const badgeClass =
     section.status === "completed"
       ? "badge-success"
@@ -584,14 +647,29 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
 
   const stateCopy =
     section.status === "running"
-      ? "Gemini가 이 섹션을 집중 분석 중입니다. 완료되면 피드백과 액션 아이템이 바로 채워집니다."
+      ? t(language, {
+          ko: "Gemini가 이 섹션을 집중 분석 중입니다. 완료되면 피드백과 액션 아이템이 바로 채워집니다.",
+          en: "Gemini is actively analyzing this section. Feedback and action items will appear once complete."
+        })
       : section.status === "completed"
-        ? "상황별 수치와 행동 교정 포인트가 준비되었습니다."
+        ? t(language, {
+            ko: "상황별 수치와 행동 교정 포인트가 준비되었습니다.",
+            en: "Scenario metrics and behavior correction points are ready."
+          })
         : section.status === "error"
-          ? "이 섹션은 오류로 종료되었습니다."
+          ? t(language, {
+              ko: "이 섹션은 오류로 종료되었습니다.",
+              en: "This section ended with an error."
+            })
           : section.facts.length
-            ? "이전 섹션이 끝나면 다음 순서로 호출됩니다."
-            : "세분화 데이터를 계산 중입니다.";
+            ? t(language, {
+                ko: "이전 섹션이 끝나면 다음 순서로 호출됩니다.",
+                en: "This section will run after the previous section finishes."
+              })
+            : t(language, {
+                ko: "세분화 데이터를 계산 중입니다.",
+                en: "Calculating segmented data."
+              });
 
   return (
     <article className="rounded-lg bg-gray-800 p-6">
@@ -601,11 +679,11 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
             {section.key.replaceAll("_", " ")}
           </p>
           <h3 className="text-2xl font-bold text-white">
-            {section.title}
+            {sectionTitleMap[section.key] ?? section.title}
           </h3>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase ${badgeClass}`}>
-          {formatSectionStatus(section.status)}
+          {formatSectionStatus(section.status, language)}
         </span>
       </div>
 
@@ -614,15 +692,17 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
       {(section.status === "running" || section.status === "pending") && (
         <div className="mb-4 inline-flex items-center gap-3 rounded-full bg-gray-700 px-4 py-2 text-sm text-gray-300">
           <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-400 border-t-blue-300"></div>
-          {section.status === "running" ? "Gemini 분석 진행 중" : "순차 대기 중"}
+          {section.status === "running"
+            ? t(language, { ko: "Gemini 분석 진행 중", en: "Gemini analysis in progress" })
+            : t(language, { ko: "순차 대기 중", en: "Waiting in queue" })}
         </div>
       )}
 
-      <SectionVisual section={section} />
+      <SectionVisual section={section} language={language} />
 
       <div className="mt-6 grid gap-4 md:grid-cols-2">
         <div className="rounded-lg bg-gray-700 p-4">
-          <h4 className="text-lg font-semibold text-blue-400 mb-3">세그먼트 요약</h4>
+          <h4 className="text-lg font-semibold text-blue-400 mb-3">{t(language, { ko: "세그먼트 요약", en: "Segment Summary" })}</h4>
           <ul className="space-y-2 text-sm text-gray-300">
             {section.facts.length ? (
               section.facts.map((fact, index) => (
@@ -631,13 +711,13 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
                 </li>
               ))
             ) : (
-              <li className="text-gray-500">세분화 요약이 준비되면 여기에 표시됩니다.</li>
+              <li className="text-gray-500">{t(language, { ko: "세분화 요약이 준비되면 여기에 표시됩니다.", en: "Segment summary will appear here once ready." })}</li>
             )}
           </ul>
         </div>
 
         <div className="rounded-lg bg-gray-700 p-4">
-          <h4 className="text-lg font-semibold text-red-400 mb-3">Gemini 피드백</h4>
+          <h4 className="text-lg font-semibold text-red-400 mb-3">{t(language, { ko: "Gemini 피드백", en: "Gemini Feedback" })}</h4>
           {section.analysis ? (
             <div className="space-y-4">
               <div>
@@ -650,7 +730,7 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
               </div>
             </div>
           ) : (
-            <p className="text-gray-500 text-sm">분석이 끝나면 문단형 피드백이 표시됩니다.</p>
+            <p className="text-gray-500 text-sm">{t(language, { ko: "분석이 끝나면 문단형 피드백이 표시됩니다.", en: "Paragraph feedback will appear when analysis is complete." })}</p>
           )}
 
           {section.error && (
@@ -664,13 +744,13 @@ function SectionCard({ section }: { section: JobSectionPayload }) {
   );
 }
 
-function FinalSummaryCard({ summary }: { summary: AnalysisSnapshot["finalSummary"] }) {
+function FinalSummaryCard({ summary, language }: { summary: AnalysisSnapshot["finalSummary"]; language: Language }) {
   if (!summary) {
     return (
       <article className="rounded-lg bg-gray-800 p-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-blue-300">최종 종합</p>
-        <h3 className="mt-2 text-xl font-bold text-white">최종 요약 데이터가 아직 없습니다.</h3>
-        <p className="mt-2 text-sm text-gray-400">3개 테마 분석이 완료되면 최종 종합 결과를 여기서 확인할 수 있습니다.</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-blue-300">{t(language, { ko: "최종 종합", en: "Final Summary" })}</p>
+        <h3 className="mt-2 text-xl font-bold text-white">{t(language, { ko: "최종 요약 데이터가 아직 없습니다.", en: "Final summary data is not available yet." })}</h3>
+        <p className="mt-2 text-sm text-gray-400">{t(language, { ko: "3개 테마 분석이 완료되면 최종 종합 결과를 여기서 확인할 수 있습니다.", en: "You can view the final summary here once all 3 theme analyses are complete." })}</p>
       </article>
     );
   }
@@ -678,7 +758,7 @@ function FinalSummaryCard({ summary }: { summary: AnalysisSnapshot["finalSummary
   return (
     <article className="rounded-lg bg-gray-800 p-6">
       <div className="mb-4">
-        <p className="text-sm font-semibold uppercase tracking-wide text-blue-300">최종 종합</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-blue-300">{t(language, { ko: "최종 종합", en: "Final Summary" })}</p>
         <h3 className="mt-2 text-2xl font-bold text-white">{summary.headline}</h3>
         <p className="mt-2 text-sm text-gray-300">{summary.analysisParagraph}</p>
       </div>
@@ -691,6 +771,7 @@ function Sidebar() {
 }
 
 function AnalysisForm({
+  language,
   riotId,
   setRiotId,
   riotTag,
@@ -702,6 +783,7 @@ function AnalysisForm({
   error,
   onSubmit
 }: {
+  language: Language;
   riotId: string;
   setRiotId: (value: string) => void;
   riotTag: string;
@@ -739,13 +821,15 @@ function AnalysisForm({
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div className="rounded-lg bg-gray-800 p-6">
-        <h2 className="text-xl font-semibold text-white mb-4">VALORANT 전술 분석</h2>
+        <h2 className="text-xl font-semibold text-white mb-4">{t(language, { ko: "VALORANT 전술 분석", en: "VALORANT Tactical Analysis" })}</h2>
         <p className="text-gray-400 text-sm mb-4">
-          {sessionBound ? "현재 로그인 세션 계정 기준으로 분석합니다." : "경쟁전 매치만 분석 가능합니다."}
+          {sessionBound
+            ? t(language, { ko: "현재 로그인 세션 계정 기준으로 분석합니다.", en: "Analysis is bound to the currently logged-in account." })
+            : t(language, { ko: "경쟁전 매치만 분석 가능합니다.", en: "Only competitive matches are supported." })}
         </p>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-300 mb-2">Riot 계정 (아이디#태그)</label>
+          <label className="block text-sm font-medium text-gray-300 mb-2">{t(language, { ko: "Riot 계정 (아이디#태그)", en: "Riot Account (ID#Tag)" })}</label>
           <input
             value={`${riotId}${hasTagDelimiter ? "#" + riotTag : ""}`}
             onChange={(event) => handleRiotIdChange(event.target.value)}
@@ -759,26 +843,26 @@ function AnalysisForm({
 
         <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">최근 매치 개수</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t(language, { ko: "최근 매치 개수", en: "Recent Match Count" })}</label>
             <select
               value={matchCount}
               onChange={(event) => setMatchCount(Number(event.target.value))}
               className="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-white focus:border-red-500 focus:outline-none"
             >
-              <option value={5}>최근 5개</option>
-              <option value={10}>최근 10개</option>
-              <option value={20}>최근 20개</option>
-              <option value={30}>최근 30개</option>
+              <option value={5}>{t(language, { ko: "최근 5개", en: "Last 5" })}</option>
+              <option value={10}>{t(language, { ko: "최근 10개", en: "Last 10" })}</option>
+              <option value={20}>{t(language, { ko: "최근 20개", en: "Last 20" })}</option>
+              <option value={30}>{t(language, { ko: "최근 30개", en: "Last 30" })}</option>
             </select>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">에피소드</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t(language, { ko: "에피소드", en: "Episode" })}</label>
             <select
               disabled
               className="w-full rounded-md border border-gray-600 bg-gray-700 px-3 py-2 text-gray-400 focus:border-red-500 focus:outline-none opacity-50 cursor-not-allowed"
             >
-              <option>자동 선택</option>
+              <option>{t(language, { ko: "자동 선택", en: "Auto Select" })}</option>
             </select>
           </div>
         </div>
@@ -788,7 +872,7 @@ function AnalysisForm({
           disabled={isSubmitting}
           className="w-full rounded-md bg-red-600 py-2 px-4 text-white hover:bg-red-500 disabled:opacity-50 transition-colors font-medium"
         >
-          {isSubmitting ? "분석 중..." : "분석 시작"}
+          {isSubmitting ? t(language, { ko: "분석 중...", en: "Analyzing..." }) : t(language, { ko: "분석 시작", en: "Start Analysis" })}
         </button>
 
         <button
@@ -798,7 +882,7 @@ function AnalysisForm({
           }}
           className="w-full mt-2 rounded-md bg-orange-600 py-2 px-4 text-white hover:bg-orange-500 transition-colors text-sm"
         >
-          에러 페이지 테스트
+          {t(language, { ko: "에러 페이지 테스트", en: "Test Error Page" })}
         </button>
 
         {error && (
@@ -812,6 +896,7 @@ function AnalysisForm({
 }
 
 function OverviewCard({
+  language,
   statusMeta,
   percent,
   live,
@@ -821,6 +906,7 @@ function OverviewCard({
   overviewRaw,
   snapshot
 }: {
+  language: Language;
   statusMeta: any;
   percent: number;
   live: boolean;
@@ -841,7 +927,7 @@ function OverviewCard({
           <h2 className="text-2xl font-bold text-white mt-2">{statusMeta.title}</h2>
         </div>
         <div className="text-right">
-          <p className="text-sm text-gray-400">진행률</p>
+          <p className="text-sm text-gray-400">{t(language, { ko: "진행률", en: "Progress" })}</p>
           <p className="text-2xl font-bold text-white">{percent}%</p>
         </div>
       </div>
@@ -862,15 +948,15 @@ function OverviewCard({
           </h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">상태</span>
-              <span className="text-sm font-semibold text-white">{formatJobStatus(snapshot.status)}</span>
+              <span className="text-sm text-gray-400">{t(language, { ko: "상태", en: "Status" })}</span>
+              <span className="text-sm font-semibold text-white">{formatJobStatus(snapshot.status, language)}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">완료 섹션</span>
+              <span className="text-sm text-gray-400">{t(language, { ko: "완료 섹션", en: "Completed Sections" })}</span>
               <span className="text-sm font-semibold text-white">{resolvedCount} / {totalCount}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">현재 단계</span>
+              <span className="text-sm text-gray-400">{t(language, { ko: "현재 단계", en: "Current Step" })}</span>
               <span className="text-sm text-gray-300">{snapshot.currentStep}</span>
             </div>
           </div>
@@ -879,11 +965,11 @@ function OverviewCard({
         {/* Stats Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div className="text-center">
-            <p className="text-sm text-gray-400">매치</p>
+            <p className="text-sm text-gray-400">{t(language, { ko: "매치", en: "Matches" })}</p>
             <p className="text-2xl font-bold text-white">{getNumber(overviewRaw, "matchesAnalyzed") || 0}</p>
           </div>
           <div className="text-center">
-            <p className="text-sm text-gray-400">승률</p>
+            <p className="text-sm text-gray-400">{t(language, { ko: "승률", en: "Win Rate" })}</p>
             <p className="text-2xl font-bold text-white">{formatPercent(getNumber(overviewRaw, "matchWinRate"))}</p>
           </div>
           <div className="text-center">
@@ -900,7 +986,7 @@ function OverviewCard({
       {/* Facts */}
       {snapshot.overview.facts.length > 0 && (
         <div className="mt-6">
-          <h4 className="text-lg font-semibold text-blue-400 mb-3">핵심 요약</h4>
+          <h4 className="text-lg font-semibold text-blue-400 mb-3">{t(language, { ko: "핵심 요약", en: "Key Summary" })}</h4>
           <ul className="space-y-2">
             {snapshot.overview.facts.map((fact, index) => (
               <li key={index} className="rounded bg-gray-700 p-3 text-sm text-gray-300">
@@ -914,55 +1000,74 @@ function OverviewCard({
   );
 }
 
-function EmptyState() {
+function EmptyState({ language }: { language: Language }) {
   return (
     <div className="rounded-lg bg-gray-800 p-6 text-center">
-      <p className="text-lg font-semibold text-amber-400">대기</p>
-      <h3 className="text-xl font-bold text-white mt-2">RSO 버튼 또는 직접 입력으로 분석을 시작하세요.</h3>
+      <p className="text-lg font-semibold text-amber-400">{t(language, { ko: "대기", en: "Waiting" })}</p>
+      <h3 className="text-xl font-bold text-white mt-2">
+        {t(language, {
+          ko: "RSO 버튼 또는 직접 입력으로 분석을 시작하세요.",
+          en: "Start analysis with the RSO button or direct input."
+        })}
+      </h3>
       <p className="text-gray-400 mt-2">
-        현재 프로토타입은 Riot 로그인 골격, 관리자 로그, 상황별 통계 카드, Gemini 행동 피드백 흐름까지 포함합니다.
+        {t(language, {
+          ko: "현재 프로토타입은 Riot 로그인 골격, 관리자 로그, 상황별 통계 카드, Gemini 행동 피드백 흐름까지 포함합니다.",
+          en: "This prototype includes Riot login flow, admin logs, scenario-based stat cards, and Gemini behavior feedback."
+        })}
       </p>
     </div>
   );
 }
 
-function SessionRequiredState({ showMockPreview }: { showMockPreview?: boolean }) {
+function SessionRequiredState({ showMockPreview, language }: { showMockPreview?: boolean; language: Language }) {
   return (
     <div className="rounded-lg bg-gray-800 p-6">
-      <p className="text-sm font-semibold uppercase tracking-wide text-amber-300">로그인 필요</p>
-      <h3 className="mt-2 text-xl font-bold text-white">세션 기반 리포트를 시작하려면 Riot 로그인이 필요합니다.</h3>
+      <p className="text-sm font-semibold uppercase tracking-wide text-amber-300">{t(language, { ko: "로그인 필요", en: "Login Required" })}</p>
+      <h3 className="mt-2 text-xl font-bold text-white">
+        {t(language, {
+          ko: "세션 기반 리포트를 시작하려면 Riot 로그인이 필요합니다.",
+          en: "Riot login is required to start session-based reports."
+        })}
+      </h3>
       <p className="mt-2 text-sm text-gray-400">
-        로그인 후 현재 계정의 `puuid` 기준으로 매치 동기화, feature snapshot, theme summary, 분석 결과를 순차 연결합니다.
+        {t(language, {
+          ko: "로그인 후 현재 계정의 `puuid` 기준으로 매치 동기화, feature snapshot, theme summary, 분석 결과를 순차 연결합니다.",
+          en: "After login, match sync, feature snapshot, theme summary, and final analysis run sequentially using your account `puuid`."
+        })}
       </p>
       {showMockPreview && (
         <p className="mt-2 rounded-md border border-cyan-400/30 bg-cyan-400/10 px-3 py-2 text-xs text-cyan-100">
-          현재는 mock 모드라 오른쪽 패널에 예시 분석 데이터가 표시됩니다.
+          {t(language, {
+            ko: "현재는 mock 모드라 오른쪽 패널에 예시 분석 데이터가 표시됩니다.",
+            en: "Mock mode is active, so sample analysis data is shown on the right panel."
+          })}
         </p>
       )}
       <div className="mt-4 flex flex-wrap gap-3">
-        <Link
+        <LocalizedLink
           href="/api/auth/riot/start"
           className="inline-flex min-h-11 items-center justify-center rounded-md bg-red-600 px-4 text-sm font-semibold text-white hover:bg-red-500"
         >
-          Riot 로그인
-        </Link>
-        <Link
+          {t(language, { ko: "Riot 로그인", en: "Riot Login" })}
+        </LocalizedLink>
+        <LocalizedLink
           href="/"
           className="inline-flex min-h-11 items-center justify-center rounded-md border border-white/20 bg-white/5 px-4 text-sm font-semibold text-slate-100 hover:bg-white/10"
         >
-          홈으로
-        </Link>
+          {t(language, { ko: "홈으로", en: "Back Home" })}
+        </LocalizedLink>
       </div>
     </div>
   );
 }
 
-function AuthBanner({ authState }: { authState?: string }) {
+function AuthBanner({ authState, language }: { authState?: string; language: Language }) {
   if (!authState) {
     return null;
   }
 
-  const copyMap: Record<string, { title: string; body: string; tone: string }> = {
+  const copyMapKo: Record<string, { title: string; body: string; tone: string }> = {
     login_success: {
       title: "로그인이 완료되었습니다.",
       body: "내부 세션 쿠키가 발급되었습니다. 현재 단계는 Mock RSO 기본값이며, 이후 Real RSO로 교체 가능합니다.",
@@ -1030,7 +1135,75 @@ function AuthBanner({ authState }: { authState?: string }) {
     }
   };
 
-  const content = copyMap[authState];
+  const copyMapEn: Record<string, { title: string; body: string; tone: string }> = {
+    login_success: {
+      title: "Login completed.",
+      body: "An internal session cookie was issued. Mock RSO is currently the default and can be replaced with Real RSO later.",
+      tone: "badge-success"
+    },
+    logout_success: {
+      title: "Logged out.",
+      body: "The internal session has been removed.",
+      tone: "badge-info"
+    },
+    logout_failed: {
+      title: "Logout was not fully completed.",
+      body: "An error occurred while clearing the session. Please try again.",
+      tone: "badge-warning"
+    },
+    missing_rso_config: {
+      title: "RSO config is missing.",
+      body: "To use Real RSO, set RIOT_RSO_CLIENT_ID, RIOT_RSO_CLIENT_SECRET, and RIOT_RSO_REDIRECT_URI in .env.local.",
+      tone: "badge-warning"
+    },
+    real_provider_not_ready: {
+      title: "Real RSO callback is not implemented yet.",
+      body: "In phase 1, mock provider is default. Real token exchange should be connected in the next phase.",
+      tone: "badge-warning"
+    },
+    missing_state: {
+      title: "OAuth state is missing.",
+      body: "State is required for security validation. Please restart the login flow.",
+      tone: "badge-error"
+    },
+    missing_code: {
+      title: "OAuth code is missing.",
+      body: "The authorization code is missing, so the session cannot be issued.",
+      tone: "badge-error"
+    },
+    auth_start_failed: {
+      title: "Failed to start login.",
+      body: "An error occurred while generating the provider authorization URL.",
+      tone: "badge-error"
+    },
+    auth_callback_failed: {
+      title: "Failed to complete login.",
+      body: "An internal error occurred while processing the callback.",
+      tone: "badge-error"
+    },
+    state_mismatch: {
+      title: "OAuth state validation failed.",
+      body: "Session state and callback state did not match, so the flow was stopped.",
+      tone: "badge-error"
+    },
+    state_expired: {
+      title: "OAuth state expired.",
+      body: "The auth request expired. Please try logging in again.",
+      tone: "badge-error"
+    },
+    mock_not_allowed_in_production: {
+      title: "Mock auth disabled in production.",
+      body: "Mock provider is not allowed in production. Check real provider settings.",
+      tone: "badge-error"
+    },
+    access_denied: {
+      title: "RSO access denied.",
+      body: "The user canceled Riot login or the provider rejected the request.",
+      tone: "badge-error"
+    }
+  };
+
+  const content = language === "en" ? copyMapEn[authState] : copyMapKo[authState];
   if (!content) {
     return null;
   }
@@ -1051,11 +1224,16 @@ function AuthBanner({ authState }: { authState?: string }) {
 }
 
 export function DashboardShell({ initialRiotId, initialRiotTag, authState, showMockPreview }: DashboardShellProps) {
+  const { language, prefix } = useLanguage();
+  const sectionTitleMap = SECTION_TITLES[language];
+  const dashboardTabTitles = DASHBOARD_TAB_TITLES[language];
+  const toApiPath = (path: string) => withLanguagePrefix(path, prefix);
+
   const [riotId, setRiotId] = useState(initialRiotId);
   const [riotTag, setRiotTag] = useState(initialRiotTag);
   const [matchCount, setMatchCount] = useState(10);
   const [snapshot, setSnapshot] = useState<AnalysisSnapshot | null>(() =>
-    showMockPreview ? buildMockPreviewSnapshot(initialRiotId || "MockPlayer", initialRiotTag || "KR1") : null
+    showMockPreview ? buildMockPreviewSnapshot(initialRiotId || "MockPlayer", initialRiotTag || "KR1", language) : null
   );
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1072,7 +1250,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
     async function hydrateRiotIdentityFromSession() {
       setIsSessionLoading(true);
       try {
-        const response = await fetch("/api/auth/session", { cache: "no-store" });
+        const response = await fetch(toApiPath("/api/auth/session"), { cache: "no-store" });
         if (!response.ok) {
           if (isMounted) {
             setAuthSession({
@@ -1118,7 +1296,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
     return () => {
       isMounted = false;
     };
-  }, [initialRiotId, initialRiotTag]);
+  }, [initialRiotId, initialRiotTag, prefix]);
 
   const sections = snapshot?.sections ?? [];
   const sectionResolvedCount = sections.filter((section) => section.status === "completed" || section.status === "error").length;
@@ -1132,40 +1310,49 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
   const statusMeta = !snapshot
     ? {
         pill: "bg-white/8 text-slate-300",
-        label: "대기",
-        title: "분석 대상 입력 후 전술 코칭을 시작하세요.",
-        body: "최근 경쟁전 매치 수집 후, 3개 테마와 최종 종합 요약을 순차 분석합니다."
+        label: t(language, { ko: "대기", en: "Waiting" }),
+        title: t(language, {
+          ko: "분석 대상 입력 후 전술 코칭을 시작하세요.",
+          en: "Enter a target and start tactical coaching."
+        }),
+        body: t(language, {
+          ko: "최근 경쟁전 매치 수집 후, 3개 테마와 최종 종합 요약을 순차 분석합니다.",
+          en: "After collecting recent competitive matches, the app analyzes 3 themes and then creates a final summary."
+        })
       }
     : snapshot.status === "failed"
       ? {
           pill: "badge-error",
-          label: "실패",
-          title: "분석이 중단되었습니다.",
+          label: t(language, { ko: "실패", en: "Failed" }),
+          title: t(language, { ko: "분석이 중단되었습니다.", en: "Analysis was interrupted." }),
           body: snapshot.currentStep
         }
       : snapshot.status === "completed" && sections.some((section) => section.status === "error")
         ? {
             pill: "badge-warning",
-            label: "부분 완료",
-            title: "일부 섹션만 완료되었습니다.",
+            label: t(language, { ko: "부분 완료", en: "Partially Completed" }),
+            title: t(language, { ko: "일부 섹션만 완료되었습니다.", en: "Only some sections were completed." }),
             body: snapshot.currentStep
           }
         : snapshot.status === "completed"
           ? {
               pill: "badge-success",
-              label: "완료",
-              title: "모든 섹션 분석이 완료되었습니다.",
+              label: t(language, { ko: "완료", en: "Completed" }),
+              title: t(language, { ko: "모든 섹션 분석이 완료되었습니다.", en: "All section analyses are complete." }),
               body: snapshot.currentStep
             }
           : {
               pill: "badge-info",
-              label: "진행 중",
-              title: snapshot.status === "collecting" ? "최근 매치를 수집 중입니다." : "Gemini가 순차 분석 중입니다.",
+              label: t(language, { ko: "진행 중", en: "In Progress" }),
+              title:
+                snapshot.status === "collecting"
+                  ? t(language, { ko: "최근 매치를 수집 중입니다.", en: "Collecting recent matches." })
+                  : t(language, { ko: "Gemini가 순차 분석 중입니다.", en: "Gemini is running sequential analysis." }),
               body: snapshot.currentStep
             };
 
   async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
-    const response = await fetch(url, {
+    const response = await fetch(url.startsWith("/") ? toApiPath(url) : url, {
       cache: "no-store",
       ...init
     });
@@ -1181,21 +1368,21 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
     setError(null);
 
     if (isSessionLoading) {
-      setError("세션 상태를 확인 중입니다. 잠시 후 다시 시도해 주세요.");
+      setError(t(language, { ko: "세션 상태를 확인 중입니다. 잠시 후 다시 시도해 주세요.", en: "Checking session state. Please try again shortly." }));
       return;
     }
 
     if (!authSession.authenticated || !authSession.session) {
-      setError("세션이 없습니다. Riot 로그인 후 다시 시도해 주세요.");
+      setError(t(language, { ko: "세션이 없습니다. Riot 로그인 후 다시 시도해 주세요.", en: "No active session. Please login with Riot and try again." }));
       return;
     }
 
     setIsSubmitting(true);
     const currentSession = authSession.session;
     const startedAt = Date.now();
-    const workingSnapshot = buildIdleSnapshot(currentSession.gameName, currentSession.tagLine);
+    const workingSnapshot = buildIdleSnapshot(currentSession.gameName, currentSession.tagLine, language);
     workingSnapshot.status = "collecting";
-    workingSnapshot.currentStep = "세션 확인을 진행합니다.";
+    workingSnapshot.currentStep = t(language, { ko: "세션 확인을 진행합니다.", en: "Verifying session." });
     workingSnapshot.createdAt = startedAt;
     workingSnapshot.updatedAt = startedAt;
     setSnapshot(workingSnapshot);
@@ -1203,7 +1390,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
     try {
       const confirmedSession = await requestJson<AuthSessionPayload>("/api/auth/session");
       if (!confirmedSession.authenticated || !confirmedSession.session) {
-        throw new Error("세션이 만료되었습니다. 다시 로그인해 주세요.");
+        throw new Error(t(language, { ko: "세션이 만료되었습니다. 다시 로그인해 주세요.", en: "Session expired. Please log in again." }));
       }
 
       startTransition(() =>
@@ -1211,7 +1398,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
           current
             ? {
                 ...current,
-                currentStep: "세션 확인 완료. 내 경기 동기화를 시작합니다.",
+                currentStep: t(language, { ko: "세션 확인 완료. 내 경기 동기화를 시작합니다.", en: "Session verified. Starting match sync." }),
                 updatedAt: Date.now()
               }
             : current
@@ -1226,7 +1413,10 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
           current
             ? {
                 ...current,
-                currentStep: `매치 동기화 완료 (신규 ${syncResult.insertedCount}, 중복 ${syncResult.skippedCount})`,
+                currentStep:
+                  language === "en"
+                    ? `Match sync complete (new ${syncResult.insertedCount}, duplicate ${syncResult.skippedCount})`
+                    : `매치 동기화 완료 (신규 ${syncResult.insertedCount}, 중복 ${syncResult.skippedCount})`,
                 updatedAt: Date.now()
               }
             : current
@@ -1241,7 +1431,10 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
           current
             ? {
                 ...current,
-                currentStep: `Feature snapshot 조회 완료 (${featureSnapshot.aggregate.matchCount}경기 / ${featureSnapshot.aggregate.roundCount}라운드)`,
+                currentStep:
+                  language === "en"
+                    ? `Feature snapshot ready (${featureSnapshot.aggregate.matchCount} matches / ${featureSnapshot.aggregate.roundCount} rounds)`
+                    : `Feature snapshot 조회 완료 (${featureSnapshot.aggregate.matchCount}경기 / ${featureSnapshot.aggregate.roundCount}라운드)`,
                 updatedAt: Date.now()
               }
             : current
@@ -1257,7 +1450,10 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
             ? {
                 ...current,
                 status: "analyzing",
-                currentStep: "Theme summary 조회 완료. 최종 분석 결과를 생성합니다.",
+                currentStep:
+                  language === "en"
+                    ? "Theme summary is ready. Generating final analysis."
+                    : "Theme summary 조회 완료. 최종 분석 결과를 생성합니다.",
                 updatedAt: Date.now()
               }
             : current
@@ -1265,7 +1461,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
       );
 
       if (featureSnapshot.aggregate.matchCount <= 0) {
-        const emptySnapshot = buildIdleSnapshot(currentSession.gameName, currentSession.tagLine);
+        const emptySnapshot = buildIdleSnapshot(currentSession.gameName, currentSession.tagLine, language);
         emptySnapshot.status = "completed";
         emptySnapshot.currentStep = "동기화된 매치가 없어 분석 입력이 비어 있습니다.";
         emptySnapshot.sections = emptySnapshot.sections.map((section) => ({
@@ -1309,21 +1505,22 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
+          lang: language,
           window: themePayloadResponse.window,
           version: themePayloadResponse.version,
           themeFeatures: themePayloadResponse.themeFeatures
         })
       });
 
-      const sections = (Object.keys(SECTION_TITLES) as SectionKey[]).map((sectionKey) => {
+      const sections = (Object.keys(sectionTitleMap) as SectionKey[]).map((sectionKey) => {
         const themeKey = SECTION_THEME_MAP[sectionKey];
         const themeFeature = themePayloadResponse.themeFeatures[themeKey];
         const themeAnalysis = analysisResult.analysis.themeAnalyses[themeKey];
         return {
           key: sectionKey,
-          title: SECTION_TITLES[sectionKey],
+          title: sectionTitleMap[sectionKey],
           status: "completed",
-          facts: buildSectionFactsFromThemePayload(themeFeature),
+          facts: buildSectionFactsFromThemePayload(themeFeature, language),
           raw: toThemeRawPayload(themeFeature),
           analysis: toSectionAnalysis(themeAnalysis),
           error: null
@@ -1340,7 +1537,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
       const finalSnapshot: AnalysisSnapshot = {
         jobId: `session-${startedAt}`,
         status: "completed",
-        currentStep: "세션 기반 분석 흐름이 완료되었습니다.",
+        currentStep: t(language, { ko: "세션 기반 분석 흐름이 완료되었습니다.", en: "Session-based analysis flow is complete." }),
         player: {
           riotId: currentSession.gameName,
           riotTag: currentSession.tagLine,
@@ -1409,14 +1606,17 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
       <SiteHeader />
 
       <main className="relative z-10 w-full px-4 md:px-12 lg:px-24 xl:px-32 2xl:px-48 py-10 flex flex-col gap-12">
-        <AuthBanner authState={authState} />
+        <AuthBanner authState={authState} language={language} />
 
         <section className="flex flex-col md:flex-row gap-10 items-stretch">
           <div className="flex-1 min-w-[320px] max-w-[420px]">
             {isSessionLoading ? (
-              <div className="rounded-lg bg-gray-800 p-6 text-sm text-gray-300">세션 상태를 확인하는 중입니다...</div>
+              <div className="rounded-lg bg-gray-800 p-6 text-sm text-gray-300">
+                {t(language, { ko: "세션 상태를 확인하는 중입니다...", en: "Checking session state..." })}
+              </div>
             ) : isSessionReady ? (
               <AnalysisForm
+                language={language}
                 riotId={riotId}
                 setRiotId={setRiotId}
                 riotTag={riotTag}
@@ -1429,12 +1629,13 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
                 onSubmit={handleSubmit}
               />
             ) : (
-              <SessionRequiredState showMockPreview={showMockPreview} />
+              <SessionRequiredState showMockPreview={showMockPreview} language={language} />
             )}
           </div>
           <div className="flex-1">
             {snapshot ? (
               <OverviewCard
+                language={language}
                 statusMeta={statusMeta}
                 percent={percent}
                 live={live}
@@ -1445,7 +1646,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
                 snapshot={snapshot}
               />
             ) : (
-              <EmptyState />
+              <EmptyState language={language} />
             )}
           </div>
         </section>
@@ -1453,7 +1654,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
         {snapshot && (
           <section className="w-full mt-8">
             <div className="flex flex-wrap gap-4 mb-8 justify-center">
-              {(Object.keys(DASHBOARD_TAB_TITLES) as DashboardTabKey[]).map((key) => {
+              {(Object.keys(dashboardTabTitles) as DashboardTabKey[]).map((key) => {
                 const isFinalTab = key === "final_summary";
                 const section = isFinalTab ? null : snapshot.sections.find((item) => item.key === key);
                 const isActive = activeTab === key;
@@ -1476,7 +1677,7 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
                     }`}
                   >
                     <div className="flex items-center gap-2">
-                      <span>{DASHBOARD_TAB_TITLES[key]}</span>
+                      <span>{dashboardTabTitles[key]}</span>
                       {isCompleted && <div className="w-3 h-3 bg-green-400 rounded-full"></div>}
                       {isError && <div className="w-3 h-3 bg-red-400 rounded-full"></div>}
                       {isRunning && <div className="w-3 h-3 bg-blue-400 rounded-full animate-pulse"></div>}
@@ -1489,12 +1690,12 @@ export function DashboardShell({ initialRiotId, initialRiotTag, authState, showM
             {/* 피드백 창을 화면 전체로 확대 */}
             <div className="w-full">
               {activeTab === "final_summary" ? (
-                <FinalSummaryCard summary={snapshot.finalSummary ?? null} />
+                <FinalSummaryCard summary={snapshot.finalSummary ?? null} language={language} />
               ) : (
                 snapshot.sections
                   .filter((section) => section.key === activeTab)
                   .map((section) => (
-                    <SectionCard key={section.key} section={section} />
+                    <SectionCard key={section.key} section={section} language={language} sectionTitleMap={sectionTitleMap} />
                   ))
               )}
             </div>

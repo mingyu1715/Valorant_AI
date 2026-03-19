@@ -7,7 +7,7 @@ export default function TermsPage() {
   return (
     <div className="app-page-shell text-stone-100">
       <div className="app-page-bg" />
-      <SiteHeader />
+      <SiteHeader hideDashboardLink />
 
       <main className="relative z-10 mx-auto w-full max-w-5xl px-6 py-10 sm:px-8 lg:px-10">
         <section className="rounded-3xl border border-gray-700/50 bg-gradient-to-br from-gray-800/50 to-gray-900/50 p-6 backdrop-blur-sm sm:p-8">

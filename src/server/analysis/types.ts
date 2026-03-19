@@ -4,6 +4,7 @@ import type {
   PlayerSummaryAnalysisInput,
   ThemeAnalysisInputPayload
 } from "@/src/server/analysis-input/types";
+import type { AppLanguage } from "@/src/i18n/config";
 
 export type AnalysisClientKind = "mock" | "real";
 
@@ -20,6 +21,7 @@ export interface FinalAnalysisResult {
 export type ThemeAnalysisResultMap = Record<AnalysisThemeKey, ThemeAnalysisResult>;
 
 export interface ThemeAnalysisClientInput {
+  lang: AppLanguage;
   theme: AnalysisThemeKey;
   featurePayload: ThemeAnalysisInputPayload;
   prompt: string;
@@ -27,6 +29,7 @@ export interface ThemeAnalysisClientInput {
 }
 
 export interface FinalAnalysisClientInput {
+  lang: AppLanguage;
   playerSummary: PlayerSummaryAnalysisInput;
   themeAnalyses: ThemeAnalysisResultMap;
   prompt: string;
@@ -40,6 +43,7 @@ export interface AnalysisClient {
 }
 
 export interface GenerateAnalysisInput {
+  lang: AppLanguage;
   puuid: string;
   window: string;
   version: string;
@@ -49,6 +53,7 @@ export interface GenerateAnalysisInput {
 }
 
 export interface AnalysisResultBundle {
+  lang: AppLanguage;
   puuid: string;
   provider: AnalysisClientKind;
   model: string;

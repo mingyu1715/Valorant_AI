@@ -1,8 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+
+import { LocalizedLink } from "@/components/localized-link";
+import { LanguageToggle } from "@/components/language-toggle";
+import { useLanguage } from "@/components/language-provider";
+import { withLanguagePrefix } from "@/src/i18n/config";
 
 type SiteHeaderProps = {
   className?: string;
@@ -10,10 +14,10 @@ type SiteHeaderProps = {
 };
 
 const NAV_LINKS = [
-  { href: "/", label: "홈" },
-  { href: "/dashboard", label: "대시보드" },
-  { href: "/privacy", label: "개인정보처리방침" },
-  { href: "/terms", label: "이용약관" }
+  { href: "/", labelKey: "nav.home" },
+  { href: "/dashboard", labelKey: "nav.dashboard" },
+  { href: "/privacy", labelKey: "nav.privacy" },
+  { href: "/terms", labelKey: "nav.terms" }
 ] as const;
 
 type HeaderAuthSessionPayload = {
@@ -25,6 +29,7 @@ type HeaderAuthSessionPayload = {
 };
 
 export function SiteHeader({ className = "", hideDashboardLink = false }: SiteHeaderProps) {
+  const { tr, prefix } = useLanguage();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [authSession, setAuthSession] = useState<HeaderAuthSessionPayload>({
     authenticated: false,
@@ -37,7 +42,8 @@ export function SiteHeader({ className = "", hideDashboardLink = false }: SiteHe
     async function loadSession() {
       setIsCheckingSession(true);
       try {
-        const response = await fetch("/api/auth/session", {
+        const localizedApiPath = withLanguagePrefix("/api/auth/session", prefix);
+        const response = await fetch(localizedApiPath, {
           cache: "no-store"
         });
         if (!response.ok) {
@@ -73,7 +79,7 @@ export function SiteHeader({ className = "", hideDashboardLink = false }: SiteHe
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [prefix]);
 
   const isLoggedIn = authSession.authenticated && Boolean(authSession.session);
   const riotDisplayName =
@@ -83,7 +89,7 @@ export function SiteHeader({ className = "", hideDashboardLink = false }: SiteHe
   return (
     <header className={`relative z-20 border-b border-white/10 bg-black/25 backdrop-blur ${className}`}>
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 lg:flex-row lg:items-center lg:justify-between">
-        <Link href="/" className="inline-flex items-center gap-3 self-start">
+        <LocalizedLink href="/" className="inline-flex items-center gap-3 self-start">
           <span className="inline-flex items-center justify-center rounded-lg bg-amber-50/95 p-2 shadow-sm ring-1 ring-amber-100/60">
             <Image
               src="/logo.svg"
@@ -95,14 +101,15 @@ export function SiteHeader({ className = "", hideDashboardLink = false }: SiteHe
             />
           </span>
           <span className="text-base font-semibold tracking-wide text-stone-100">VALORANT AI Coach</span>
-        </Link>
+        </LocalizedLink>
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <LanguageToggle />
           <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-300 sm:text-sm">
             {visibleNavLinks.map((link) => (
-              <Link key={link.href} href={link.href} className="hover:text-white">
-                {link.label}
-              </Link>
+              <LocalizedLink key={link.href} href={link.href} className="hover:text-white">
+                {tr(link.labelKey)}
+              </LocalizedLink>
             ))}
           </nav>
           {isLoggedIn && (
@@ -112,22 +119,22 @@ export function SiteHeader({ className = "", hideDashboardLink = false }: SiteHe
           )}
           {isCheckingSession ? (
             <span className="inline-flex min-h-9 items-center rounded-md border border-white/20 bg-white/5 px-3 text-xs font-semibold text-slate-300 sm:text-sm">
-              세션 확인 중...
+              {tr("auth.checkingSession")}
             </span>
           ) : isLoggedIn ? (
-            <Link
+            <LocalizedLink
               href="/api/auth/logout"
               className="inline-flex min-h-9 items-center justify-center rounded-md border border-white/20 bg-white/5 px-3 text-xs font-semibold text-slate-100 hover:bg-white/10 sm:text-sm"
             >
-              로그아웃
-            </Link>
+              {tr("auth.logout")}
+            </LocalizedLink>
           ) : (
-            <Link
+            <LocalizedLink
               href="/api/auth/riot/start"
               className="inline-flex min-h-9 items-center justify-center rounded-md bg-red-600 px-3 text-xs font-semibold text-white hover:bg-red-500 sm:text-sm"
             >
-              Riot 로그인
-            </Link>
+              {tr("auth.riotLogin")}
+            </LocalizedLink>
           )}
         </div>
       </div>

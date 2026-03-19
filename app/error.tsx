@@ -2,6 +2,9 @@
 
 import { useEffect } from 'react';
 
+import { useLanguage } from "@/components/language-provider";
+import { withLanguagePrefix } from "@/src/i18n/config";
+
 export default function Error({
   error,
   reset,
@@ -9,6 +12,8 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const { language, prefix, tr } = useLanguage();
+
   useEffect(() => {
     console.error(error);
   }, [error]);
@@ -22,9 +27,11 @@ export default function Error({
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">오류가 발생했습니다</h1>
+          <h1 className="text-2xl font-bold text-white mb-2">
+            {tr("error.title")}
+          </h1>
           <p className="text-gray-400 text-sm">
-            죄송합니다. 예상치 못한 오류가 발생했습니다.
+            {tr("error.body")}
           </p>
         </div>
 
@@ -33,14 +40,16 @@ export default function Error({
             onClick={reset}
             className="w-full bg-red-600 hover:bg-red-500 text-white font-semibold py-3 px-4 rounded-md transition-colors"
           >
-            다시 시도
+            {tr("error.retry")}
           </button>
 
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => {
+              window.location.href = withLanguagePrefix("/", prefix);
+            }}
             className="w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-4 rounded-md transition-colors"
           >
-            홈으로 돌아가기
+            {tr("error.backHome")}
           </button>
         </div>
 
@@ -48,7 +57,7 @@ export default function Error({
         {false && (
           <details className="mt-6 text-left">
             <summary className="text-gray-400 cursor-pointer hover:text-gray-300">
-              개발자 정보 (클릭하여 펼치기)
+              {language === "en" ? "Developer Details (click to expand)" : "개발자 정보 (클릭하여 펼치기)"}
             </summary>
             <pre className="mt-2 text-xs text-red-400 bg-gray-900 p-3 rounded overflow-auto">
               {error.message}
